@@ -3,14 +3,23 @@ import assert from 'node:assert/strict';
 import { sceneryLayout, seaVisitor, drawPalms } from '../src/scenery.js';
 import { Runner } from '../src/engine.js';
 
-test('装饰沙石位于跑道下方，椰树从沙地表面向上生长', () => {
+test('沙滩小物位于跑道下方，椰树从沙地表面向上生长', () => {
   for (const [width, height] of [[1200, 720], [600, 1300], [900, 320]]) {
     const ground = height * 0.72;
     const layout = sceneryLayout(width, height, ground);
-    assert.ok(layout.stones.every((s) => s.y - s.h >= ground + 48));
+    assert.ok(layout.beachItems.every((item) => item.y - item.radius >= ground + 48));
     assert.ok(layout.palms.length > 0);
     assert.ok(layout.palms.every((p) => p.y === ground + 2 && p.y - p.h < ground));
   }
+});
+test('海星和贝壳使用独立种子随机分布，同一种子跨帧保持稳定', () => {
+  const a = sceneryLayout(1200, 720, 520, 0, false, 123);
+  const b = sceneryLayout(1200, 720, 520, 0, false, 456);
+  assert.deepEqual(a.beachItems, sceneryLayout(1200, 720, 520, 0, false, 123).beachItems);
+  assert.notDeepEqual(a.beachItems, b.beachItems);
+  assert.deepEqual(new Set(a.beachItems.map((item) => item.kind)), new Set(['starfish', 'shell']));
+  assert.ok(a.beachItems.every((item) => item.opacity >= 0.12 && item.opacity <= 0.17));
+  assert.deepEqual(a.palms, b.palms);
 });
 test('椰树始终以固定透明度绘制，不因玩家或障碍接近消失', () => {
   const draw = (foreground) => {

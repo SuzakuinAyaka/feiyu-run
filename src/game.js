@@ -107,6 +107,7 @@ function begin() {
   if (!renderer || modalOpen()) return;
   const fromEntrance = game.state === 'ready';
   clearInput(); hideDeparture(); startingBest = best; game.start(); lastTime = 0;
+  renderer.resetScenery();
   updateUI(); renderer.draw(game); $('scene').focus({ preventScroll: true });
   if (fromEntrance) {
     // 文案属于独立装饰层，保留约 3 秒，绝不等待它结束才启动游戏或接收输入。

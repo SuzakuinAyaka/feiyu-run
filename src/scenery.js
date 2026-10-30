@@ -1,10 +1,16 @@
 const fraction = (value) => { const n = Math.sin(value * 127.1 + 311.7) * 43758.5453; return n - Math.floor(n); };
 
-export function sceneryLayout(width, height, ground, distance = 0, reduced = false) {
+export function sceneryLayout(width, height, ground, distance = 0, reduced = false, seed = 0) {
   const sand = height - ground;
-  const stones = sand > 70 ? Array.from({ length: Math.min(18, Math.ceil(width / 90)) }, (_, i) => {
-    const h = 2 + fraction(i + 3) * 4;
-    return { x: fraction(i + 7) * width, y: ground + 48 + h + fraction(i + 11) * Math.max(0, sand - 70 - 2 * h), w: 8 + fraction(i + 19) * 16, h, tilt: fraction(i + 31) * 0.6 - 0.3 };
+  const beachItems = sand > 80 ? Array.from({ length: Math.min(18, Math.ceil(width / 100)) }, (_, i) => {
+    const random = (salt) => fraction(seed + i * 17 + salt);
+    const radius = 6 + random(3) * 4;
+    return {
+      kind: (i + Math.floor(random(5) * 2)) % 2 ? 'starfish' : 'shell',
+      x: random(7) * width,
+      y: ground + 48 + radius + random(11) * Math.max(0, sand - 64 - radius * 2),
+      radius, tilt: random(31) * Math.PI * 2, opacity: 0.12 + random(23) * 0.05,
+    };
   }) : [];
   // 固定世界位置，相隔 1250 单位；只用行进距离投影，不在视口内循环瞬移。
   const offset = reduced ? 0 : distance * 0.18;
@@ -15,7 +21,7 @@ export function sceneryLayout(width, height, ground, distance = 0, reduced = fal
     const worldX = 580 + id * 1250;
     palms.push({ id, worldX, x: worldX - offset, y: ground + 2, h: Math.min(110, ground * 0.22) * (0.9 + fraction(id + 43) * 0.15) });
   }
-  return { seaTop: ground - 195, quietTop: ground - 120, sandTop: ground + 48, height, stones, palms };
+  return { seaTop: ground - 195, quietTop: ground - 120, sandTop: ground + 48, height, beachItems, palms };
 }
 
 export function seaVisitor(time, width, ground, reduced = false) {
@@ -93,8 +99,8 @@ function visitor(c, animal) {
   c.restore();
 }
 
-export function drawSea(c, width, height, ground, distance, time, reduced) {
-  const layout = sceneryLayout(width, height, ground, distance, reduced);
+export function drawSea(c, width, height, ground, distance, time, reduced, seed = 0) {
+  const layout = sceneryLayout(width, height, ground, distance, reduced, seed);
   c.fillStyle = '#f1dba4'; c.globalAlpha = 0.65;
   c.beginPath(); c.arc(width * 0.22, Math.max(38, layout.seaTop * 0.38), 27, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
   c.fillStyle = '#c5e3ed'; c.fillRect(0, layout.seaTop, width, ground - layout.seaTop);
@@ -116,14 +122,36 @@ export function drawSea(c, width, height, ground, distance, time, reduced) {
 
 export function drawSand(c, layout, width, distance, reduced) {
   c.save(); c.beginPath(); c.rect(0, layout.sandTop, width, Math.max(0, layout.height - layout.sandTop)); c.clip();
-  c.save(); c.fillStyle = '#8b9f9b'; c.globalAlpha = 0.16;
   const drift = reduced ? 0 : distance * 0.035;
-  for (const stone of layout.stones) {
-    const x = ((stone.x - drift) % (width + 30) + width + 30) % (width + 30) - 15;
-    c.save(); c.translate(x, stone.y); c.rotate(stone.tilt);
-    c.beginPath(); c.moveTo(-stone.w / 2, 0); c.lineTo(-stone.w * 0.28, -stone.h * 0.65);
-    c.lineTo(stone.w * 0.12, -stone.h); c.lineTo(stone.w * 0.4, -stone.h * 0.5); c.lineTo(stone.w / 2, stone.h * 0.2); c.closePath(); c.fill(); c.restore();
+  for (const item of layout.beachItems) {
+    const x = ((item.x - drift) % (width + 30) + width + 30) % (width + 30) - 15;
+    c.save(); c.translate(x, item.y); c.rotate(item.tilt); c.scale(item.radius, item.radius);
+    c.globalAlpha = item.opacity; c.lineWidth = 0.07;
+    if (item.kind === 'starfish') {
+      c.fillStyle = '#bd927b'; c.strokeStyle = '#a7806d'; c.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const angle = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 0.42 : 0.96;
+        if (i === 0) c.moveTo(Math.cos(angle) * r, Math.sin(angle) * r);
+        else c.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+      }
+      c.closePath(); c.fill();
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI / 2 + i * Math.PI * 2 / 5;
+        c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a) * 0.65, Math.sin(a) * 0.65); c.stroke();
+      }
+    } else {
+      c.fillStyle = '#a79c8a'; c.strokeStyle = '#938e82'; c.beginPath();
+      c.moveTo(-0.16, 0.65); c.lineTo(-0.83, -0.15);
+      for (let i = 0; i < 5; i++) {
+        const a = Math.PI + i * Math.PI / 5, b = Math.PI + (i + 1) * Math.PI / 5;
+        c.quadraticCurveTo(Math.cos((a+b)/2) * 1.03, Math.sin((a+b)/2) * 0.9 - 0.15, Math.cos(b) * 0.83, Math.sin(b) * 0.72 - 0.15);
+      }
+      c.lineTo(0.16, 0.65); c.closePath(); c.fill();
+      for (const a of [Math.PI * 1.2, Math.PI * 1.4, Math.PI * 1.6, Math.PI * 1.8]) {
+        c.beginPath(); c.moveTo(0, 0.55); c.quadraticCurveTo(Math.cos(a) * 0.35, -0.1, Math.cos(a) * 0.7, Math.sin(a) * 0.6 - 0.15); c.stroke();
+      }
+    }
+    c.restore();
   }
-  c.restore();
   c.restore();
 }

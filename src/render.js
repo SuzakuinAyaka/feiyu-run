@@ -61,8 +61,16 @@ export class Renderer {
     this.c = canvas.getContext('2d');
     this.sprite = sprite;
     this.runSprite = runSprite;
+    this.resetScenery();
     this.reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.resize();
+  }
+  resetScenery() {
+    // 独立背景种子；不调用游戏障碍使用的 Math.random，跨帧保持不变。
+    const value = globalThis.crypto?.getRandomValues
+      ? globalThis.crypto.getRandomValues(new Uint32Array(1))[0]
+      : Date.now();
+    this.scenerySeed = value % 1000000;
   }
   resize() {
     const w = innerWidth, h = innerHeight;
@@ -96,7 +104,7 @@ export class Renderer {
       const x = ((w * f - drift * (0.7 + i * 0.2)) % (w + 180) + w + 180) % (w + 180) - 60;
       this.cloud(x, ground - 270 - (i % 2) * 55, 38 + i * 7);
     });
-    const scenery = drawSea(c, w, h, ground, game.distance, game.time, this.reduced);
+    const scenery = drawSea(c, w, h, ground, game.distance, game.time, this.reduced, this.scenerySeed);
     // 先画完整椰树，随后绘制沙地、障碍与角色；重叠时由前景遮挡，不隐藏整棵树。
     drawPalms(c, scenery);
     c.fillStyle = '#f2eada'; c.fillRect(0, ground, w, h - ground);
