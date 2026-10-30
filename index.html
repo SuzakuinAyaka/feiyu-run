@@ -52,6 +52,7 @@
       <button id="home" data-i18n="home" type="button" hidden>返回入口</button>
       <button id="sound" type="button" aria-pressed="false">音效：关</button>
       <button id="help" data-i18n="help" type="button">操作说明</button>
+      <button id="reset-score" data-i18n="resetScore" type="button">清空最高分</button>
     </nav>
     <p id="status" class="sr-only" role="status" aria-live="polite"></p>
     <noscript><p class="no-script" data-i18n="noScript">大肥鱼快跑需要 JavaScript，请在浏览器中启用后刷新。</p></noscript>
@@ -69,6 +70,15 @@
     <p data-i18n="phoneHelp">手机使用屏幕下方的两个按钮。最高分仅保存在当前浏览器；音效默认关闭。</p>
     <p class="credit" data-i18n="credit">非官方同人项目，与 DeepSeek 无隶属、合作或授权关系。角色依据用户提供的参考图生成，代码与游戏图形自行实现。</p>
     <form method="dialog"><button autofocus data-i18n="gotIt">知道了</button></form>
+  </dialog>
+  <dialog id="reset-dialog" aria-labelledby="reset-title" aria-describedby="reset-note">
+    <h2 id="reset-title" data-i18n="resetTitle">清空最高分？</h2>
+    <p id="reset-note"></p>
+    <p id="reset-error" data-i18n="resetError" role="alert" hidden>清空失败，浏览器未允许修改存储，请重试。</p>
+    <form method="dialog" class="dialog-actions">
+      <button value="cancel" data-i18n="cancel" autofocus>取消</button>
+      <button id="confirm-reset" type="button" data-i18n="confirmReset">确认清空</button>
+    </form>
   </dialog>
   <script type="module" src="./src/game.js"></script>
 </body>

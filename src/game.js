@@ -2,6 +2,7 @@ import { Runner } from './engine.js';
 import { Renderer, drawPixelAvatar } from './render.js';
 import { readPreferences, savePreference } from './preferences.js';
 import { applyTranslations, translate } from './i18n.js';
+import { readBestScore, clearBestScore, isNewRecord } from './score.js';
 
 const $ = (id) => document.getElementById(id);
 const game = new Runner();
@@ -15,9 +16,8 @@ const jumpPointers = new Set(), duckPointers = new Set();
 const jumpKeys = new Set(['Space', 'ArrowUp', 'KeyW']);
 const duckKeys = new Set(['ArrowDown', 'KeyS']);
 const heldJumpKeys = new Set(), heldDuckKeys = new Set();
-let best = 0;
-try { best = Math.max(0, Number(localStorage.getItem('feiyu-run.best')) || 0); } catch { /* 禁用存储时仍可游戏。 */ }
-best = Number.isFinite(best) ? Math.min(99999999, Math.floor(best)) : 0;
+let best = readBestScore(storage), startingBest = best, wasRecord = false;
+const modalOpen = () => !!document.querySelector('dialog[open]');
 drawPixelAvatar($('pixel-avatar'), preferences.theme);
 
 function announce(key, values) { $('status').textContent = t(key, values); }
@@ -50,6 +50,15 @@ function clearInput() {
   game.releaseJump(); game.duck(false);
 }
 
+function updateScore() {
+  const record = game.state !== 'ready' && isNewRecord(game.score, startingBest);
+  $('score').textContent = String(game.score).padStart(5, '0');
+  $('score').classList.toggle('new-record', record);
+  $('score').setAttribute('aria-label', t(record ? 'recordScore' : 'currentScore', { score: game.score }));
+  if (record && !wasRecord && game.state === 'running') announce('announceRecord');
+  wasRecord = record;
+}
+
 function updateUI() {
   const state = game.state;
   document.body.dataset.state = entering ? 'entering' : state;
@@ -60,6 +69,8 @@ function updateUI() {
   $('pause').hidden = state === 'ready' || state === 'over';
   $('pause').textContent = t(state === 'paused' ? 'resume' : 'pause');
   $('home').hidden = state === 'ready';
+  $('reset-score').hidden = state !== 'ready' || entering;
+  $('reset-note').textContent = t('resetNote', { score: best });
   $('overlay').hidden = state !== 'paused' && state !== 'over';
   $('touch-controls').hidden = state !== 'running' || entering;
   $('theme').hidden = state !== 'ready' || entering;
@@ -67,7 +78,7 @@ function updateUI() {
   $('theme').setAttribute('aria-label', t(preferences.theme === 'dark' ? 'switchLight' : 'switchDark'));
   $('sound').textContent = t(soundEnabled ? 'soundOn' : 'soundOff');
   document.querySelector('meta[name="theme-color"]').content = state === 'ready' && !entering ? preferences.theme === 'dark' ? '#202124' : '#ffffff' : '#eaf5fa';
-  $('score').textContent = String(game.score).padStart(5, '0');
+  updateScore();
   $('best').textContent = String(best).padStart(5, '0');
   $('overlay-title').textContent = t(state === 'over' ? 'overTitle' : 'pausedTitle');
   $('overlay-note').textContent = t(state === 'over' ? 'overNote' : 'pausedNote', { score: game.score });
@@ -87,11 +98,11 @@ function updateUI() {
 }
 
 function begin() {
-  if (!renderer || entering || $('help-dialog').open) return;
+  if (!renderer || entering || modalOpen()) return;
   const fromEntrance = game.state === 'ready';
   clearInput();
   const start = () => {
-    entering = false; game.start(); lastTime = 0; updateUI(); renderer.draw(game); $('scene').focus({ preventScroll: true });
+    entering = false; startingBest = best; game.start(); lastTime = 0; updateUI(); renderer.draw(game); $('scene').focus({ preventScroll: true });
     if (pauseAfterEntry || document.hidden) pause();
     pauseAfterEntry = false;
   };
@@ -107,7 +118,7 @@ function pause() {
   clearInput(); game.pause(); updateUI();
 }
 function resume() {
-  if ($('help-dialog').open) return;
+  if (modalOpen()) return;
   clearInput(); game.resume(); lastTime = 0; updateUI(); $('scene').focus({ preventScroll: true });
 }
 function jump() { if (game.jump()) tone(640); }
@@ -168,10 +179,20 @@ $('help-dialog').addEventListener('close', () => {
   clearInput();
   if (game.state === 'paused') $('continue').focus({ preventScroll: true });
 });
+$('reset-score').addEventListener('click', () => {
+  if (game.state !== 'ready' || entering) return;
+  clearInput(); $('reset-error').hidden = true; updateUI(); $('reset-dialog').showModal();
+});
+$('confirm-reset').addEventListener('click', () => {
+  if (!$('reset-dialog').open || game.state !== 'ready' || entering) return;
+  if (!clearBestScore(storage)) { $('reset-error').hidden = false; return; }
+  best = 0; startingBest = 0; updateUI(); $('reset-dialog').close('confirmed'); announce('scoreCleared');
+});
+$('reset-dialog').addEventListener('close', clearInput);
 
 document.addEventListener('keydown', (event) => {
   if (entering) { if (['Space', 'ArrowUp', 'ArrowDown'].includes(event.code)) event.preventDefault(); return; }
-  if ($('help-dialog').open || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (modalOpen() || event.ctrlKey || event.metaKey || event.altKey) return;
   const code = event.code;
   // 保留 Tab 选中设置按钮后的原生 Space/Enter 激活行为。
   if (event.target instanceof HTMLButtonElement && !['start', 'continue'].includes(event.target.id)) return;
@@ -230,7 +251,7 @@ function frame(time) {
     const dt = lastTime ? (time - lastTime) / 1000 : 0;
     game.update(dt); renderer.draw(game);
     if (game.state !== previousState) updateUI();
-    else if (game.state === 'running') $('score').textContent = String(game.score).padStart(5, '0');
+    else if (game.state === 'running') updateScore();
   }
   lastTime = time; requestAnimationFrame(frame);
 }

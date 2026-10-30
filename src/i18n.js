@@ -23,6 +23,11 @@ export const messages = {
     announceRunning: '开始跑酷。空格跳跃，下方向键下蹲。', announcePaused: '游戏已暂停。请主动继续。',
     announceOver: '本局结束，{score} 分。按空格或 Enter 再跑一次。', announceError: '角色素材加载失败，可以重新加载。',
     entering: '沿着海风，出发。',
+    resetScore: '清空最高分', resetTitle: '清空最高分？',
+    resetNote: '当前最高分：{score}。清空后无法恢复，主题和语言设置不受影响。',
+    cancel: '取消', confirmReset: '确认清空', scoreCleared: '最高分已清空。',
+    resetError: '清空失败，浏览器未允许修改存储，请重试。',
+    currentScore: '当前分数：{score}', recordScore: '新纪录，当前分数：{score}', announceRecord: '已超过历史最高分，新纪录！',
   },
   en: {
     title: 'Feiyu Run', pageTitle: 'Feiyu Run · A seaside runner',
@@ -48,6 +53,11 @@ export const messages = {
     announceRunning: 'Running. Space to jump, Down to duck.', announcePaused: 'Game paused. Resume when you are ready.',
     announceOver: 'Game over. {score} points. Press Space or Enter to run again.', announceError: 'Character failed to load. You can try again.',
     entering: 'Off we go, with the sea breeze.',
+    resetScore: 'Clear best score', resetTitle: 'Clear your best score?',
+    resetNote: 'Your best score is {score}. This cannot be undone. Your theme and language will be kept.',
+    cancel: 'Cancel', confirmReset: 'Clear score', scoreCleared: 'Best score cleared.',
+    resetError: 'Could not clear the score. Browser storage could not be updated. Please try again.',
+    currentScore: 'Current score: {score}', recordScore: 'New record! Current score: {score}', announceRecord: 'You beat your best score. A new record!',
   },
 };
 
