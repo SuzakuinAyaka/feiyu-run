@@ -1,12 +1,20 @@
 const fraction = (value) => { const n = Math.sin(value * 127.1 + 311.7) * 43758.5453; return n - Math.floor(n); };
 
-export function sceneryLayout(width, height, ground) {
+export function sceneryLayout(width, height, ground, distance = 0, reduced = false) {
   const sand = height - ground;
   const stones = sand > 70 ? Array.from({ length: Math.min(18, Math.ceil(width / 90)) }, (_, i) => {
     const h = 2 + fraction(i + 3) * 4;
     return { x: fraction(i + 7) * width, y: ground + 48 + h + fraction(i + 11) * Math.max(0, sand - 70 - 2 * h), w: 8 + fraction(i + 19) * 16, h, tilt: fraction(i + 31) * 0.6 - 0.3 };
   }) : [];
-  const palms = [0.34, 0.82].map((x, i) => ({ x: width * x, y: ground + 2, h: Math.min(110, ground * 0.22) * (i ? 0.85 : 1) }));
+  // 固定世界位置，相隔 1250 单位；只用行进距离投影，不在视口内循环瞬移。
+  const offset = reduced ? 0 : distance * 0.18;
+  const palms = [];
+  const first = Math.ceil((offset - 180 - 580) / 1250);
+  const last = Math.floor((offset + width + 180 - 580) / 1250);
+  for (let id = first; id <= last; id++) {
+    const worldX = 580 + id * 1250;
+    palms.push({ id, worldX, x: worldX - offset, y: ground + 2, h: Math.min(110, ground * 0.22) * (0.9 + fraction(id + 43) * 0.15) });
+  }
   return { seaTop: ground - 195, quietTop: ground - 120, sandTop: ground + 48, height, stones, palms };
 }
 
@@ -28,7 +36,7 @@ export function seaVisitor(time, width, ground, reduced = false) {
 }
 
 export function palmOpacity(tree, foreground = []) {
-  const left = tree.x - tree.h * 0.31, right = tree.x + tree.h * 0.75;
+  const left = tree.x - tree.h * 0.38, right = tree.x + tree.h * 0.85;
   return foreground.reduce((opacity, box) => {
     const gap = Math.max(box.x - 32 - right, left - (box.x + box.w + 32), 0);
     return Math.min(opacity, gap / 48, 1);
@@ -37,11 +45,34 @@ export function palmOpacity(tree, foreground = []) {
 
 function palm(c, tree, opacity) {
   c.save(); c.translate(tree.x, tree.y); c.scale(tree.h, tree.h);
-  c.globalAlpha = 0.12 * opacity; c.strokeStyle = '#658f84'; c.lineCap = 'round'; c.lineWidth = 0.045;
-  c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(0.02, -0.55, 0.22, -1); c.stroke();
-  c.lineWidth = 0.035;
-  for (const [x, y] of [[-0.48, 0.12], [-0.45, -0.02], [-0.3, -0.15], [-0.1, -0.18], [0.28, -0.16], [0.46, -0.04], [0.5, 0.12]]) {
-    c.beginPath(); c.moveTo(0.22, -1); c.quadraticCurveTo(0.22 + x * 0.65, -1.18, 0.22 + x, -1 + y); c.stroke();
+  c.globalAlpha = 0.23 * opacity; c.lineCap = 'round';
+  // 暖棕树干与分节纹理，和绿色羽状树冠明确区分。
+  c.fillStyle = '#9b7a58';
+  c.beginPath(); c.moveTo(-0.035, 0); c.quadraticCurveTo(-0.015, -0.55, 0.19, -1);
+  c.lineTo(0.25, -1); c.quadraticCurveTo(0.065, -0.55, 0.035, 0); c.closePath(); c.fill();
+  c.strokeStyle = '#795d41'; c.lineWidth = 0.012;
+  for (let i = 1; i < 9; i++) {
+    const t = i / 10, x = 0.22 * t * t;
+    c.beginPath(); c.moveTo(x - 0.023, -t); c.lineTo(x + 0.025, -t + 0.016); c.stroke();
+  }
+  const fronds = [[-0.58, 0.18], [-0.55, -0.02], [-0.38, -0.23], [-0.12, -0.32], [0.31, -0.25], [0.54, -0.07], [0.61, 0.16]];
+  fronds.forEach(([x, y], i) => {
+    c.fillStyle = i % 2 ? '#73a083' : '#528969'; c.globalAlpha = 0.2 * opacity;
+    c.beginPath(); c.moveTo(0.22, -1);
+    c.quadraticCurveTo(0.22 + x * 0.48, -1 + y * 0.35 - 0.13, 0.22 + x, -1 + y);
+    c.quadraticCurveTo(0.22 + x * 0.45, -1 + y * 0.3 + 0.03, 0.22, -1); c.fill();
+    c.strokeStyle = '#477d5e'; c.lineWidth = 0.009;
+    c.beginPath(); c.moveTo(0.22, -1); c.quadraticCurveTo(0.22 + x * 0.55, -1 + y * 0.4 - 0.04, 0.22 + x, -1 + y); c.stroke();
+    // 沿叶脉补短羽片，避免树冠仍像几条等粗的弧线。
+    for (let j = 2; j < 7; j++) {
+      const t = j / 8, px = 0.22 + x * t, py = -1 + y * t - Math.sin(t * Math.PI) * 0.05;
+      const length = 0.055 * (1 - t);
+      c.beginPath(); c.moveTo(px - y * length, py + x * length); c.lineTo(px + y * length, py - x * length); c.stroke();
+    }
+  });
+  c.globalAlpha = 0.26 * opacity; c.fillStyle = '#90704f';
+  for (const [x, y] of [[0.19, -0.96], [0.25, -0.94], [0.22, -0.9]]) {
+    c.beginPath(); c.ellipse(x, y, 0.027, 0.035, 0.2, 0, Math.PI * 2); c.fill();
   }
   c.restore();
 }
@@ -74,7 +105,7 @@ function visitor(c, animal) {
 }
 
 export function drawSea(c, width, height, ground, distance, time, reduced) {
-  const layout = sceneryLayout(width, height, ground);
+  const layout = sceneryLayout(width, height, ground, distance, reduced);
   c.fillStyle = '#f1dba4'; c.globalAlpha = 0.65;
   c.beginPath(); c.arc(width * 0.22, Math.max(38, layout.seaTop * 0.38), 27, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
   c.fillStyle = '#c5e3ed'; c.fillRect(0, layout.seaTop, width, ground - layout.seaTop);

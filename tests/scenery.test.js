@@ -16,9 +16,26 @@ test('椰树避让玩家和障碍，接近时渐隐而非覆盖轮廓', () => {
   const tree = { x: 400, h: 100 };
   assert.equal(palmOpacity(tree), 1);
   assert.equal(palmOpacity(tree, [{ x: 400, w: 43 }]), 0);
-  assert.equal(palmOpacity(tree, [{ x: 540, w: 43 }]), 33 / 48);
+  assert.equal(palmOpacity(tree, [{ x: 540, w: 43 }]), 23 / 48);
   assert.equal(palmOpacity(tree, [{ x: 600, w: 43 }]), 1);
   assert.equal(palmOpacity({ x: 150, h: 100 }, [{ x: 30, w: 145 }]), 0);
+});
+test('椰树锚定世界坐标，随前进距离向后移动且相邻间距更大', () => {
+  const a = sceneryLayout(2800, 720, 520, 0);
+  const b = sceneryLayout(2800, 720, 520, 100);
+  const tree = a.palms.find((p) => p.x > 200);
+  const moved = b.palms.find((p) => p.id === tree.id);
+  assert.ok(moved.x < tree.x);
+  assert.equal(moved.worldX, tree.worldX);
+  assert.ok(Math.abs(tree.x - moved.x - 18) < 1e-8);
+  assert.ok(a.palms.slice(1).every((p, i) => p.worldX - a.palms[i].worldX >= 1200));
+});
+test('椰树离屏后才补入新树，同一世界位置可重现，减少动态效果时固定', () => {
+  const a = sceneryLayout(600, 1300, 936, 8000);
+  const b = sceneryLayout(600, 1300, 936, 8000);
+  assert.deepEqual(a.palms, b.palms);
+  assert.deepEqual(sceneryLayout(600, 1300, 936, 8000, true).palms, sceneryLayout(600, 1300, 936, 0, true).palms);
+  assert.ok(a.palms.every((p) => p.x >= -180 && p.x <= 780));
 });
 test('海豚与虎鲸低频出现、缓慢移动且远离玩家与障碍判断带', () => {
   assert.equal(seaVisitor(0, 1200, 520), null);
