@@ -99,21 +99,73 @@ function visitor(c, animal) {
   c.restore();
 }
 
+export function seaWaves(width, ground, time = 0, reduced = false) {
+  const t = reduced ? 0 : time;
+  return Array.from({ length: (Math.ceil(width / 180) + 1) * 2 }, (_, i) => ({
+    x: ((Math.floor(i / 2) * 180 + (i % 2) * 67 - t * 2) % (width + 160) + width + 160) % (width + 160) - 70,
+    y: ground - 195 + 18 + i % 2 * 32 + fraction(i + 53) * 4,
+    width: 35 + fraction(i + 67) * 34,
+    amplitude: 1.5 + fraction(i + 71) * 1.5,
+    phase: i * 0.8 - t * 0.45,
+  }));
+}
+
+export function skyFlocks(width, ground, time, seed = 0, reduced = false) {
+  const sky = ground - 195;
+  if (reduced || sky < 90) return [];
+  const flocks = [];
+  let start = 7 + fraction(seed + 101) * 5;
+  for (let id = 0; start <= time; id++) {
+    const random = (salt) => fraction(seed + id * 37 + salt);
+    const count = 3 + Math.floor(random(107) * 5);
+    const speed = 14 + random(113) * 12;
+    const trail = Math.ceil((count - 1) / 2) * 18;
+    const x = width + 12 - (time - start) * speed;
+    if (x + trail + 6 >= 0) {
+      flocks.push({ id, count, speed, trail, x, y: Math.max(62, sky * (0.18 + random(127) * 0.06)), opacity: 0.13 });
+    }
+    start += 24 + random(139) * 28;
+  }
+  return flocks;
+}
+
+function drawSkyFlocks(c, width, ground, time, seed, reduced) {
+  c.save(); c.strokeStyle = '#71909e'; c.lineWidth = 1.1; c.lineCap = 'round';
+  for (const flock of skyFlocks(width, ground, time, seed, reduced)) {
+    c.globalAlpha = flock.opacity;
+    for (let i = 0; i < flock.count; i++) {
+      const rank = Math.ceil(i / 2);
+      const x = flock.x + rank * 18, y = flock.y + rank * (i % 2 ? -7 : 7);
+      // 两笔弧线组成的小海鸥；形状、透明度与本群速度始终固定。
+      c.beginPath(); c.moveTo(x - 4.5, y - 1.5); c.quadraticCurveTo(x - 2, y - 3, x, y);
+      c.quadraticCurveTo(x + 2, y - 3, x + 4.5, y - 1.5); c.stroke();
+    }
+  }
+  c.restore();
+}
+
 export function drawSea(c, width, height, ground, distance, time, reduced, seed = 0) {
   const layout = sceneryLayout(width, height, ground, distance, reduced, seed);
   c.fillStyle = '#f1dba4'; c.globalAlpha = 0.65;
   c.beginPath(); c.arc(width * 0.22, Math.max(38, layout.seaTop * 0.38), 27, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
+  drawSkyFlocks(c, width, ground, time, seed, reduced);
   c.fillStyle = '#c5e3ed'; c.fillRect(0, layout.seaTop, width, ground - layout.seaTop);
   c.fillStyle = '#d5ebf2'; c.fillRect(0, layout.seaTop, width, 4);
-  const drift = reduced ? 0 : distance * 0.025;
   c.save();
   // 海洋动物和波纹不进入跑道上方 120 单位；椰树在障碍物下方的背景层单独绘制。
   c.beginPath(); c.rect(0, layout.seaTop - 30, width, ground - 128 - (layout.seaTop - 30)); c.clip();
-  c.fillStyle = '#e0f0f5';
-  for (let i = 0; i < 12; i++) {
-    const x = ((i * 137 - drift) % (width + 100) + width + 100) % (width + 100);
-    c.fillRect(x, layout.seaTop + 17 + i % 4 * 11, 20 + i % 3 * 12, 2);
+  c.strokeStyle = '#f5ffff'; c.lineWidth = 1.2; c.lineCap = 'round'; c.globalAlpha = 0.43;
+  for (const wave of seaWaves(width, ground, time, reduced)) {
+    c.beginPath();
+    for (let step = 0; step <= 16; step++) {
+      const progress = step / 16;
+      const x = wave.x + wave.width * progress;
+      const y = wave.y + Math.sin(progress * Math.PI * 2 + wave.phase) * wave.amplitude;
+      if (step === 0) c.moveTo(x, y); else c.lineTo(x, y);
+    }
+    c.stroke();
   }
+  c.globalAlpha = 1;
   const animal = seaVisitor(time, width, ground, reduced);
   if (animal) visitor(c, animal);
   c.restore();

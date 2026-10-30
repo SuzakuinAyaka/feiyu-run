@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sceneryLayout, seaVisitor, drawPalms } from '../src/scenery.js';
+import { sceneryLayout, seaVisitor, drawPalms, seaWaves, skyFlocks } from '../src/scenery.js';
 import { Runner } from '../src/engine.js';
 
 test('沙滩小物位于跑道下方，椰树从沙地表面向上生长', () => {
@@ -62,6 +62,33 @@ test('海豚与虎鲸低频出现、缓慢移动且远离玩家与障碍判断�
   assert.ok(Math.abs(seaVisitor(22, 1200, 520).x - dolphin.x) < 25);
   assert.equal(seaVisitor(35, 1200, 520), null);
   assert.equal(seaVisitor(21, 1200, 520, true), null);
+});
+test('海浪仅位于远海，低幅度移动且减少动态效果时保持静态', () => {
+  for (const width of [600, 1200, 2400]) {
+    const waves = seaWaves(width, 520, 0);
+    assert.ok(waves.length > 4);
+    assert.ok(waves.every((wave) => wave.y + wave.amplitude < 520 - 128 && wave.amplitude <= 3));
+    assert.notDeepEqual(waves, seaWaves(width, 520, 1));
+    assert.deepEqual(seaWaves(width, 520, 10, true), seaWaves(width, 520, 0, true));
+  }
+});
+test('海鸥群的数量、速度与间隔由独立种子确定，跨帧匀速向左且不渐隐', () => {
+  const a = skyFlocks(1200, 520, 20, 123), b = skyFlocks(1200, 520, 21, 123);
+  assert.ok(a.length > 0);
+  const first = a[0], next = b.find((flock) => flock.id === first.id);
+  assert.ok(first.count >= 3 && first.count <= 7);
+  assert.ok(Math.abs(first.x - next.x - first.speed) < 1e-8);
+  assert.equal(first.opacity, next.opacity);
+  assert.ok(first.opacity <= 0.15);
+  assert.notDeepEqual(a, skyFlocks(1200, 520, 20, 456));
+  assert.deepEqual(a, skyFlocks(1200, 520, 20, 123));
+  assert.deepEqual(skyFlocks(1200, 520, 20, 123, true), []);
+});
+test('海鸥群完全飞出左侧才移除，短横屏空间不足时不挤入前景', () => {
+  for (const time of [0, 10, 20, 100, 300]) {
+    assert.ok(skyFlocks(600, 936, time, 123).every((flock) => flock.x + flock.trail + 6 >= 0));
+  }
+  assert.deepEqual(skyFlocks(900, 240, 20, 123), []);
 });
 test('绘制数据的计算不消耗游戏随机数，不修改物理、计分及障碍', () => {
   const game = new Runner({ random: () => 0.5 }); game.start();

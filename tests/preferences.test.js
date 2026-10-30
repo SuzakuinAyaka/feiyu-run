@@ -28,6 +28,12 @@ test('中英文文案键完整一致且插值保留分数', () => {
   assert.equal(translate('unsupported', 'title'), messages['zh-CN'].title);
   assert.throws(() => translate('en', 'missing'), /missing/);
 });
+test('触屏入口提示点击屏幕，桌面保留空格提示', () => {
+  for (const locale of ['zh-CN', 'en']) {
+    assert.doesNotMatch(translate(locale, 'readyTouch'), /空格|Space/);
+    assert.match(translate(locale, 'ready'), /空格|Space/);
+  }
+});
 test('完整八帧步态按前进距离连续循环，不影响引擎状态', () => {
   const poses = Array.from({ length: 8 }, (_, i) => runPose(i * 18));
   assert.deepEqual(poses.map((p) => p.frame), [0, 1, 2, 3, 4, 5, 6, 7]);

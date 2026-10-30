@@ -11,6 +11,7 @@ let storage;
 try { storage = window.localStorage; } catch { /* 隐私模式允许无存储游戏。 */ }
 const preferences = readPreferences(storage);
 const t = (key, values) => translate(preferences.locale, key, values);
+const touchLayout = matchMedia('(pointer: coarse), (max-width: 700px)');
 let loadState = 'loading', departureTimer;
 const jumpPointers = new Set(), duckPointers = new Set();
 const jumpKeys = new Set(['Space', 'ArrowUp', 'KeyW']);
@@ -20,7 +21,10 @@ let best = readBestScore(storage), startingBest = best, wasRecord = false;
 const modalOpen = () => !!document.querySelector('dialog[open]');
 drawPixelAvatar($('pixel-avatar'), preferences.theme);
 
-function announce(key, values) { $('status').textContent = t(key, values); }
+function announce(key, values) {
+  const deviceKey = touchLayout.matches && ['announceReady', 'announceRunning'].includes(key) ? `${key}Touch` : key;
+  $('status').textContent = t(deviceKey, values);
+}
 
 function refreshPreferences() {
   document.documentElement.dataset.theme = preferences.theme;
@@ -65,7 +69,8 @@ function updateUI() {
   $('entrance').hidden = state !== 'ready';
   $('playfield').hidden = state === 'ready';
   $('start').disabled = loadState !== 'ready';
-  $('start-hint').textContent = t(loadState === 'ready' ? 'ready' : loadState === 'error' ? 'loadFailed' : 'loading');
+  $('start-hint').textContent = t(loadState === 'ready' ? touchLayout.matches ? 'readyTouch' : 'ready' : loadState === 'error' ? 'loadFailed' : 'loading');
+  $('scene').setAttribute('aria-label', t(touchLayout.matches ? 'sceneTouch' : 'scene'));
   $('pause').hidden = state === 'ready' || state === 'over';
   $('pause').textContent = t(state === 'paused' ? 'resume' : 'pause');
   $('home').hidden = state === 'ready';
@@ -156,6 +161,12 @@ async function loadSprite() {
 }
 
 $('start').addEventListener('click', begin);
+document.addEventListener('click', (event) => {
+  if (!touchLayout.matches || game.state !== 'ready' || loadState !== 'ready' || modalOpen() || event.defaultPrevented) return;
+  if (!(event.target instanceof Element) || event.target.closest('button, a, nav, dialog')) return;
+  begin();
+});
+touchLayout.addEventListener('change', updateUI);
 $('retry-load').addEventListener('click', loadSprite);
 $('continue').addEventListener('click', activate);
 $('pause').addEventListener('click', () => game.state === 'paused' ? resume() : pause());
