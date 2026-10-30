@@ -1,5 +1,7 @@
 # 大肥鱼快跑 · Feiyu Run
 
+在线游玩：[https://suzakuinayaka.github.io/feiyu-run/](https://suzakuinayaka.github.io/feiyu-run/)
+
 蓝色鲸鱼女仆的海边跑酷小游戏。入口保留 Chrome 小恐龙式留白、小像素角色和开玩提示，支持手动深色/浅色切换；开玩后平滑进入彩色动漫海岸场景。
 
 纯静态 HTML / CSS / JavaScript / Canvas，无后端，无运行时依赖，无外部字体或追踪请求。
