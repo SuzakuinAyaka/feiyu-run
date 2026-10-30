@@ -45,13 +45,21 @@
     <p id="departure-message" data-i18n="entering" aria-hidden="true" hidden>沿着海风，出发。</p>
 
     <nav id="preferences" data-i18n-aria-label="preferences" aria-label="外观与语言">
-      <button id="theme" type="button">浅色模式</button>
+      <button id="theme" type="button" aria-label="切换到浅色模式" title="切换到浅色模式">
+        <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="3.8"></circle>
+          <path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+        </svg>
+        <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M19.5 15.3A8 8 0 1 1 8.7 4.5C7.8 8 9.1 11.9 12.1 14.1c2.1 1.5 4.9 1.9 7.4 1.2Z"></path>
+        </svg>
+      </button>
       <button id="language" type="button" data-i18n="language" data-i18n-aria-label="switchLanguage">English</button>
     </nav>
     <nav id="utilities" data-i18n-aria-label="settings" aria-label="游戏设置">
       <button id="pause" type="button" hidden>暂停</button>
       <button id="home" data-i18n="home" type="button" hidden>返回入口</button>
-      <button id="sound" type="button" aria-pressed="false">音效：关</button>
+      <button id="sound" type="button" aria-pressed="false">音效 OFF</button>
       <button id="help" data-i18n="help" type="button">操作说明</button>
       <button id="reset-score" data-i18n="resetScore" type="button">清空最高分</button>
     </nav>

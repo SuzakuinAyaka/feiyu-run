@@ -4,6 +4,8 @@
 
 `src/render.js` 中的 `drawPixelAvatar` 为自绘灰色像素鲸鱼女仆小图，用于入口。`assets/favicon.svg` 为自绘简化鲸鱼图标。
 
+入口主题切换使用 `index.html` 内联的自绘太阳/月亮 SVG，使用 `currentColor` 跟随深浅主题与悬停状态，不依赖第三方图标库。图标只作视觉呈现，按钮本身提供双语 `aria-label` 与 `title`。
+
 ## 游戏内角色
 
 - 文件：`assets/feiyu-sprites.png`，1536 × 1024 RGBA。

@@ -74,8 +74,8 @@ function updateUI() {
   $('overlay').hidden = state !== 'paused' && state !== 'over';
   $('touch-controls').hidden = state !== 'running';
   $('theme').hidden = state !== 'ready';
-  $('theme').textContent = t(preferences.theme === 'dark' ? 'lightTheme' : 'darkTheme');
   $('theme').setAttribute('aria-label', t(preferences.theme === 'dark' ? 'switchLight' : 'switchDark'));
+  $('theme').title = t(preferences.theme === 'dark' ? 'switchLight' : 'switchDark');
   $('sound').textContent = t(soundEnabled ? 'soundOn' : 'soundOff');
   document.querySelector('meta[name="theme-color"]').content = state === 'ready' ? preferences.theme === 'dark' ? '#202124' : '#ffffff' : '#eaf5fa';
   updateScore();
