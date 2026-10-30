@@ -1,0 +1,127 @@
+const frames = [
+  { x: 22, y: 40, w: 495, h: 510 },
+  { x: 540, y: 40, w: 480, h: 510 },
+  { x: 1030, y: 40, w: 490, h: 510 },
+  { x: 26, y: 558, w: 490, h: 452 },
+  { x: 523, y: 650, w: 510, h: 360 },
+  { x: 1090, y: 610, w: 435, h: 405 },
+];
+
+export function drawPixelAvatar(canvas) {
+  const c = canvas.getContext('2d');
+  c.clearRect(0, 0, 48, 56);
+  // 入口专用的小像素形象；进入游戏才使用完整动漫角色。
+  const pixels = [
+    '         aaa        ',
+    '        a   a       ',
+    '      wwwwwwww      ',
+    '     wwhhhhhhww     ',
+    '    hhhhhhhhhhh     ',
+    '    hhhhhhhhhhhh    ',
+    '   hhhsshhsshhhh    ',
+    '   hhskssskshhhh    ',
+    '   hhssssssshhhh    ',
+    '   hhhssmsshhhh     ',
+    '   hhhwwwwwhhh      ',
+    '  ahhdbwwbdhhh a    ',
+    ' aahhdwwwwdhh aaa   ',
+    ' aahddwwwwddhaa a   ',
+    '  aaddwwwwddaaaa    ',
+    '   addwwwwdda       ',
+    '    dddddddd        ',
+    '    wwwwwwww        ',
+    '     ss  ss         ',
+    '     kk  kk         ',
+  ];
+  const colors = { a: '#777d86', w: '#d3d6da', h: '#999ea6', s: '#c0c3c8', k: '#383b40', m: '#72767e', d: '#767c85', b: '#535962' };
+  pixels.forEach((row, y) => [...row].forEach((p, x) => {
+    if (colors[p]) { c.fillStyle = colors[p]; c.fillRect(2 + x * 2, 8 + y * 2, 2, 2); }
+  }));
+}
+
+export class Renderer {
+  constructor(canvas, sprite) {
+    this.canvas = canvas;
+    this.c = canvas.getContext('2d');
+    this.sprite = sprite;
+    this.reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.resize();
+  }
+  resize() {
+    const w = innerWidth, h = innerHeight;
+    this.width = Math.max(600, w / 1.25);
+    this.scale = w / this.width;
+    this.height = h / this.scale;
+    this.ground = this.height * (h < 500 ? 0.77 : 0.72);
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    this.canvas.width = Math.round(w * dpr);
+    this.canvas.height = Math.round(h * dpr);
+    this.c.setTransform(dpr * this.scale, 0, 0, dpr * this.scale, 0, 0);
+    this.c.imageSmoothingEnabled = true;
+  }
+
+  cloud(x, y, size) {
+    const c = this.c;
+    c.fillStyle = '#fff';
+    c.beginPath();
+    c.ellipse(x, y, size, size * 0.21, 0, 0, Math.PI * 2);
+    c.ellipse(x - size * 0.25, y - size * 0.15, size * 0.4, size * 0.3, 0, 0, Math.PI * 2);
+    c.ellipse(x + size * 0.25, y - size * 0.2, size * 0.35, size * 0.36, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+
+  draw(game) {
+    const c = this.c, w = this.width, h = this.height, ground = this.ground;
+    c.clearRect(0, 0, w, h);
+    c.fillStyle = '#eaf5fa'; c.fillRect(0, 0, w, h);
+    const drift = this.reduced ? 0 : game.distance * 0.045;
+    [0.31, 0.65, 0.94].forEach((f, i) => {
+      const x = ((w * f - drift * (0.7 + i * 0.2)) % (w + 180) + w + 180) % (w + 180) - 60;
+      this.cloud(x, ground - 180 - (i % 2) * 55, 38 + i * 7);
+    });
+    c.fillStyle = '#b3dce9'; c.fillRect(0, ground - 65, w, 65);
+    c.fillStyle = '#cce8f0'; c.fillRect(0, ground - 65, w, 5);
+    c.fillStyle = '#d9edf3';
+    for (let i = 0; i < 13; i++) {
+      const x = ((i * 137 - drift * 1.3) % (w + 150) + w + 150) % (w + 150);
+      c.fillRect(x, ground - 48 + (i % 4) * 10, 20 + i % 3 * 7, 2);
+    }
+    c.fillStyle = '#f2eada'; c.fillRect(0, ground, w, h - ground);
+    c.fillStyle = '#8caaad'; c.fillRect(0, ground, w, 2);
+    c.fillStyle = '#c7bfae';
+    for (let i = 0; i < Math.ceil(w / 40) + 2; i++) {
+      const x = ((i * 47 - game.distance) % (w + 70) + w + 70) % (w + 70);
+      c.fillRect(x, ground + 9 + (i % 3) * 7, i % 2 ? 5 : 10, 2);
+    }
+    for (const obstacle of game.obstacles) this.obstacle(obstacle, ground, game.time);
+    const p = game.player;
+    const index = game.state === 'over' ? 5 : p.y < 0 ? 3 : p.ducking ? 4 : [0, 1, 2, 1][Math.floor(game.time * 10) % 4];
+    const frame = frames[index];
+    const height = index === 4 ? 58 : index === 5 ? 78 : 102;
+    const width = frame.w / frame.h * height;
+    // 碰撞只覆盖前方身体，飘动头发与尾巴不造成惩罚。
+    c.drawImage(this.sprite, frame.x, frame.y, frame.w, frame.h, 132 - width, ground + p.y - height + 2, width, height);
+  }
+
+  obstacle(o, ground, time) {
+    const c = this.c, x = o.x, y = ground + o.y;
+    c.save(); c.translate(x, y);
+    if (o.kind === 'rock') {
+      c.fillStyle = '#65889b';
+      c.beginPath(); c.moveTo(0, 49); c.lineTo(5, 18); c.lineTo(18, 0); c.lineTo(34, 7); c.lineTo(43, 49); c.closePath(); c.fill();
+      c.fillStyle = '#91aebc'; c.beginPath(); c.moveTo(5, 18); c.lineTo(18, 0); c.lineTo(23, 31); c.lineTo(0, 49); c.fill();
+    } else if (o.kind === 'log') {
+      c.fillStyle = '#9a7560'; c.beginPath(); c.roundRect(0, 4, 66, 31, 9); c.fill();
+      c.fillStyle = '#d9b58a'; c.beginPath(); c.ellipse(59, 19, 7, 15, 0, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = '#725a4d'; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(8, 13); c.lineTo(43, 13); c.moveTo(6, 24); c.lineTo(37, 24); c.stroke();
+    } else {
+      const flap = Math.sin(time * 12) * 9;
+      c.strokeStyle = '#547a91'; c.lineWidth = 4; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(0, 4 + flap); c.quadraticCurveTo(13, -3 + flap, 24, 14); c.quadraticCurveTo(36, -3 + flap, 48, 4 + flap); c.stroke();
+      c.fillStyle = '#fff'; c.beginPath(); c.ellipse(24, 14, 12, 5, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#c89448'; c.fillRect(34, 12, 7, 3);
+    }
+    c.restore();
+  }
+}

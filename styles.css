@@ -1,0 +1,71 @@
+:root {
+  color-scheme: dark;
+  --entrance: #202124;
+  --entrance-ink: #a9adb4;
+  --sky: #eaf5fa;
+  --ink: #254663;
+  --muted: #42637a;
+  --accent: #245c96;
+  --paper: #fff;
+  --focus: #71b6ff;
+  font-family: Arial, "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--entrance); color: var(--entrance-ink); }
+body:not([data-state="ready"]) { background: var(--sky); color: var(--ink); color-scheme: light; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; border-radius: 3px; }
+button:disabled { cursor: wait; }
+button:focus-visible, canvas:focus-visible { outline: 3px solid var(--focus); outline-offset: 6px; }
+button:hover { color: var(--focus); }
+button:active { opacity: 0.7; }
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#game { min-height: 100svh; }
+#entrance { width: min(600px, calc(100% - 48px)); margin: 0 auto; padding-top: clamp(90px, 18vh, 220px); }
+#start { display: block; width: 56px; height: 64px; padding: 0; background: transparent; }
+#pixel-avatar { width: 48px; height: 56px; image-rendering: pixelated; }
+#start-hint { font-size: 24px; line-height: 1.5; margin: 24px 0 0; }
+#load-error { max-width: 440px; font-size: 16px; line-height: 1.6; }
+#retry-load { padding: 10px 16px; background: #3c4043; }
+#playfield { position: fixed; inset: 0; }
+#scene { display: block; width: 100%; height: 100%; touch-action: none; outline-offset: -5px; }
+#scene:focus-visible { outline: 2px solid #b3dce9; outline-offset: -2px; }
+#scoreboard { position: absolute; top: 25%; right: max(24px, 4vw); display: flex; gap: 28px; pointer-events: none; font-size: clamp(18px, 2.4vw, 30px); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.12em; }
+.score-label { color: var(--muted); margin-right: 8px; }
+#overlay { position: absolute; top: 34%; left: 50%; transform: translateX(-50%); width: min(90%, 360px); text-align: center; }
+#overlay h2 { margin: 0 0 12px; font-size: 24px; letter-spacing: 0.1em; }
+#overlay p { margin: 0 0 20px; font-size: 16px; line-height: 1.5; }
+#continue { padding: 12px 26px; color: var(--paper); background: var(--accent); min-height: 44px; }
+#continue:hover { background: var(--ink); }
+#utilities { position: fixed; bottom: max(20px, env(safe-area-inset-bottom)); right: 24px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 12px; z-index: 2; }
+#utilities button { padding: 10px 4px; background: transparent; font-size: 13px; }
+#touch-controls { position: absolute; bottom: max(74px, calc(env(safe-area-inset-bottom) + 65px)); left: 24px; right: 24px; display: none; justify-content: space-between; pointer-events: none; }
+#touch-controls button { width: 80px; min-height: 72px; color: var(--ink); background: #cee4ef; font-size: 26px; touch-action: none; user-select: none; -webkit-user-select: none; pointer-events: auto; }
+#touch-controls span { display: block; font-size: 14px; margin-top: 3px; }
+dialog { width: min(520px, calc(100% - 36px)); max-height: calc(100svh - 48px); border: 0; padding: 28px; background: var(--paper); color: var(--ink); }
+dialog::backdrop { background: rgb(0 0 0 / 55%); }
+dialog h2 { font-size: 24px; margin: 0 0 20px; }
+dialog p { font-size: 16px; line-height: 1.65; }
+dialog dl { margin: 24px 0; font-size: 15px; }
+dialog dl div { display: grid; grid-template-columns: 50px 1fr; gap: 12px; margin: 14px 0; }
+dialog dd { margin: 0; line-height: 1.5; }
+dialog .credit { font-size: 13px; color: var(--muted); }
+dialog form { text-align: right; }
+dialog form button { padding: 12px 22px; background: var(--accent); color: var(--paper); }
+.no-script { position: relative; max-width: 600px; margin: 32px auto; padding: 24px; font-size: 16px; }
+@media (pointer: coarse), (max-width: 700px) {
+  #touch-controls { display: flex; }
+  #start-hint { font-size: 20px; }
+  #entrance { padding-top: 18svh; }
+  #scoreboard { top: 22%; gap: 18px; right: 20px; }
+  #utilities { right: 20px; left: 20px; }
+  #overlay { top: 32%; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #entrance { padding-top: 15svh; }
+  #touch-controls { bottom: 50px; }
+  #touch-controls button { min-height: 50px; width: 64px; font-size: 20px; }
+  #touch-controls span { font-size: 12px; }
+  #scoreboard { top: 12%; }
+  #overlay { top: 20%; }
+}

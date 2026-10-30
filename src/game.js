@@ -1,0 +1,187 @@
+import { Runner } from './engine.js';
+import { Renderer, drawPixelAvatar } from './render.js';
+
+const $ = (id) => document.getElementById(id);
+const game = new Runner();
+let renderer, soundEnabled = false, audio, lastTime = 0, previousState = 'ready', loadAttempt = 0;
+const jumpPointers = new Set(), duckPointers = new Set();
+const jumpKeys = new Set(['Space', 'ArrowUp', 'KeyW']);
+const duckKeys = new Set(['ArrowDown', 'KeyS']);
+const heldJumpKeys = new Set(), heldDuckKeys = new Set();
+let best = 0;
+try { best = Math.max(0, Number(localStorage.getItem('feiyu-run.best')) || 0); } catch { /* 禁用存储时仍可游戏。 */ }
+best = Number.isFinite(best) ? Math.min(99999999, Math.floor(best)) : 0;
+drawPixelAvatar($('pixel-avatar'));
+
+function announce(message) { $('status').textContent = message; }
+
+function tone(frequency, duration = 0.09) {
+  if (!soundEnabled) return;
+  try {
+    audio ??= new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') void audio.resume().catch(() => {});
+    const oscillator = audio.createOscillator(), gain = audio.createGain();
+    oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(frequency, audio.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.6, audio.currentTime + duration);
+    gain.gain.setValueAtTime(0.055, audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + duration);
+    oscillator.connect(gain); gain.connect(audio.destination); oscillator.start(); oscillator.stop(audio.currentTime + duration);
+  } catch { /* 无音频设备或浏览器不支持时保持无声。 */ }
+}
+
+function clearInput() {
+  jumpPointers.clear(); duckPointers.clear(); heldJumpKeys.clear(); heldDuckKeys.clear();
+  game.releaseJump(); game.duck(false);
+}
+
+function updateUI() {
+  const state = game.state;
+  document.body.dataset.state = state;
+  $('entrance').hidden = state !== 'ready';
+  $('playfield').hidden = state === 'ready';
+  $('pause').hidden = state === 'ready' || state === 'over';
+  $('pause').textContent = state === 'paused' ? '继续' : '暂停';
+  $('home').hidden = state === 'ready';
+  $('overlay').hidden = state !== 'paused' && state !== 'over';
+  $('touch-controls').hidden = state !== 'running';
+  $('score').textContent = String(game.score).padStart(5, '0');
+  $('best').textContent = String(best).padStart(5, '0');
+  $('overlay-title').textContent = state === 'over' ? '本局结束' : '休息一下';
+  $('overlay-note').textContent = state === 'over' ? `跑了 ${game.score} 分，再向前一点？` : '海岸线会在这里等你。';
+  $('continue').textContent = state === 'over' ? '再跑一次' : '继续跑';
+  if (state !== previousState) {
+    if (state === 'over') {
+      best = Math.max(best, game.score);
+      try { localStorage.setItem('feiyu-run.best', String(best)); } catch { /* 本次会话仍记录最高分。 */ }
+      $('best').textContent = String(best).padStart(5, '0');
+      announce(`本局结束，${game.score} 分。按空格或 Enter 再跑一次。`);
+      tone(190, 0.23); clearInput(); $('continue').focus({ preventScroll: true });
+    } else if (state === 'paused') {
+      announce('游戏已暂停。请主动继续。'); $('continue').focus({ preventScroll: true });
+    } else if (state === 'running') announce('开始跑酷。空格跳跃，下方向键下蹲。');
+    previousState = state;
+  }
+}
+
+function begin() {
+  if (!renderer || $('help-dialog').open) return;
+  clearInput(); game.start(); lastTime = 0; updateUI(); renderer.draw(game); $('scene').focus({ preventScroll: true });
+}
+function pause() {
+  if (game.state !== 'running') return;
+  clearInput(); game.pause(); updateUI();
+}
+function resume() {
+  if ($('help-dialog').open) return;
+  clearInput(); game.resume(); lastTime = 0; updateUI(); $('scene').focus({ preventScroll: true });
+}
+function jump() { if (game.jump()) tone(640); }
+function activate() {
+  if (game.state === 'ready' || game.state === 'over') begin();
+  else if (game.state === 'paused') resume();
+}
+
+async function loadSprite() {
+  const attempt = ++loadAttempt;
+  $('start').disabled = true; $('start-hint').textContent = '大肥鱼正在赶来…';
+  $('load-error').hidden = true; $('retry-load').hidden = true;
+  const sprite = new Image();
+  const timer = setTimeout(() => failed(), 15000);
+  function failed() {
+    if (attempt !== loadAttempt) return;
+    clearTimeout(timer); loadAttempt++;
+    $('start-hint').textContent = '大肥鱼还没赶到'; $('load-error').hidden = false; $('retry-load').hidden = false;
+    announce('角色素材加载失败，可以重新加载。');
+  }
+  sprite.onload = () => {
+    if (attempt !== loadAttempt) return;
+    clearTimeout(timer); renderer = new Renderer($('scene'), sprite); game.resize(renderer.width);
+    $('start').disabled = false; $('start-hint').textContent = '点按大肥鱼或按空格键即可开玩';
+    announce('游戏已准备好。点按大肥鱼或按空格键开始。');
+  };
+  sprite.onerror = failed;
+  sprite.src = new URL('../assets/feiyu-sprites.png', import.meta.url).href;
+}
+
+$('start').addEventListener('click', begin);
+$('retry-load').addEventListener('click', loadSprite);
+$('continue').addEventListener('click', activate);
+$('pause').addEventListener('click', () => game.state === 'paused' ? resume() : pause());
+$('home').addEventListener('click', () => {
+  clearInput(); game.reset(); game.state = 'ready'; updateUI(); $('start').focus({ preventScroll: true });
+});
+$('sound').addEventListener('click', () => {
+  soundEnabled = !soundEnabled; $('sound').textContent = `音效：${soundEnabled ? '开' : '关'}`;
+  $('sound').setAttribute('aria-pressed', String(soundEnabled)); tone(520);
+});
+$('help').addEventListener('click', () => { pause(); $('help-dialog').showModal(); });
+$('help-dialog').addEventListener('close', () => {
+  clearInput();
+  if (game.state === 'paused') $('continue').focus({ preventScroll: true });
+});
+
+document.addEventListener('keydown', (event) => {
+  if ($('help-dialog').open || event.ctrlKey || event.metaKey || event.altKey) return;
+  const code = event.code;
+  // 保留 Tab 选中设置按钮后的原生 Space/Enter 激活行为。
+  if (event.target instanceof HTMLButtonElement && !['start', 'continue'].includes(event.target.id)) return;
+  if (![...jumpKeys, ...duckKeys, 'KeyP', 'Escape', 'Enter'].includes(code)) return;
+  event.preventDefault();
+  if (event.repeat) return;
+  if (code === 'KeyP' || code === 'Escape') { if (game.state === 'paused') resume(); else pause(); return; }
+  if (code === 'Enter') { activate(); return; }
+  if (jumpKeys.has(code)) {
+    heldJumpKeys.add(code);
+    if (game.state !== 'running') { activate(); heldJumpKeys.add(code); }
+    else jump();
+  } else if (duckKeys.has(code)) { heldDuckKeys.add(code); game.duck(true); }
+});
+document.addEventListener('keyup', (event) => {
+  heldJumpKeys.delete(event.code); heldDuckKeys.delete(event.code);
+  if (jumpKeys.has(event.code) && !heldJumpKeys.size && !jumpPointers.size) game.releaseJump();
+  if (duckKeys.has(event.code) && !heldDuckKeys.size && !duckPointers.size) game.duck(false);
+});
+
+function bindHold(id, pointers, down, up) {
+  const button = $(id);
+  button.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault(); button.setPointerCapture(event.pointerId); pointers.add(event.pointerId); down();
+  });
+  const release = (event) => {
+    pointers.delete(event.pointerId);
+    if (!pointers.size) up();
+  };
+  button.addEventListener('pointerup', release);
+  button.addEventListener('pointercancel', release);
+  button.addEventListener('lostpointercapture', release);
+  // 为屏幕阅读器生成的 click 保留等价操作。
+  button.addEventListener('click', (event) => { if (event.detail === 0) { down(); up(); } });
+}
+bindHold('jump', jumpPointers, jump, () => { if (!heldJumpKeys.size) game.releaseJump(); });
+bindHold('duck', duckPointers, () => game.duck(true), () => { if (!heldDuckKeys.size) game.duck(false); });
+$('scene').addEventListener('pointerdown', (event) => {
+  if (game.state !== 'running' || event.button !== 0) return;
+  event.preventDefault(); $('scene').setPointerCapture(event.pointerId); jumpPointers.add(event.pointerId); jump();
+});
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+  $('scene').addEventListener(type, (event) => { jumpPointers.delete(event.pointerId); if (!jumpPointers.size && !heldJumpKeys.size) game.releaseJump(); });
+}
+window.addEventListener('blur', pause);
+document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+window.addEventListener('pagehide', pause);
+window.addEventListener('resize', () => {
+  if (renderer) { pause(); renderer.resize(); game.resize(renderer.width); renderer.draw(game); }
+});
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (event) => { if (renderer) renderer.reduced = event.matches; });
+
+function frame(time) {
+  if (renderer && game.state !== 'ready') {
+    const dt = lastTime ? (time - lastTime) / 1000 : 0;
+    game.update(dt); renderer.draw(game);
+    if (game.state !== previousState) updateUI();
+    else if (game.state === 'running') $('score').textContent = String(game.score).padStart(5, '0');
+  }
+  lastTime = time; requestAnimationFrame(frame);
+}
+updateUI(); void loadSprite(); requestAnimationFrame(frame);

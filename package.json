@@ -1,0 +1,14 @@
+{
+  "name": "feiyu-run",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "蓝色鲸鱼女仆的海边像素跑酷",
+  "scripts": {
+    "dev": "node tools/serve.mjs",
+    "test": "node --test",
+    "check": "node --check src/engine.js && node --check src/game.js && node --check src/render.js && node tools/check.mjs",
+    "build": "node tools/build.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
