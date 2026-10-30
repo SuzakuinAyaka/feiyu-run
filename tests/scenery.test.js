@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sceneryLayout, seaVisitor, drawPalms, seaWaves, skyFlocks } from '../src/scenery.js';
+import { sceneryLayout, seaVisitor, drawPalms, seaWaves, skyFlocks, orcaSplashes } from '../src/scenery.js';
 import { Runner } from '../src/engine.js';
 
 test('沙滩小物位于跑道下方，椰树从沙地表面向上生长', () => {
@@ -87,6 +87,37 @@ test('每 68 秒保留一次海豚，虎鲸增加为两次且保持低透明度�
   }
   assert.deepEqual(starts.filter(([, kind]) => kind === 'dolphin').map(([time]) => time), [18, 86]);
   assert.deepEqual(starts.filter(([, kind]) => kind === 'orca').map(([time]) => time), [52, 74, 120, 142]);
+});
+
+test('虎鲸出水与入水各触发一次水花，入水余波在虎鲸消失后继续消散', () => {
+  for (const start of [52, 74, 120, 142]) {
+    assert.equal(orcaSplashes(start - 0.1, 1200, 520).length, 0);
+    const launch = orcaSplashes(start + 0.4, 1200, 520);
+    const landing = orcaSplashes(start + 7.1, 1200, 520);
+    assert.equal(launch.length, 1); assert.equal(launch[0].kind, 'launch');
+    assert.equal(landing.length, 1); assert.equal(landing[0].kind, 'landing');
+    assert.ok(landing[0].x > launch[0].x);
+    assert.equal(seaVisitor(start + 7.1, 1200, 520), null);
+    assert.deepEqual(orcaSplashes(start + 3, 1200, 520), []);
+    assert.deepEqual(orcaSplashes(start + 8.1, 1200, 520), []);
+  }
+  assert.deepEqual(orcaSplashes(18.4, 1200, 520), []);
+});
+
+test('水花低透明度、只在远海，随时间扩散且减少动态效果时不绘制', () => {
+  for (const width of [600, 1200]) {
+    const a = orcaSplashes(52.3, width, 520)[0], b = orcaSplashes(52.6, width, 520)[0];
+    assert.equal(a.x, b.x); assert.ok(b.radius > a.radius);
+    for (let time = 52; time < 60.1; time += 0.1) {
+      for (const splash of orcaSplashes(time, width, 520)) {
+        assert.ok(splash.opacity >= 0 && splash.opacity <= 0.32);
+        assert.ok(splash.y + 4 < 520 - 128);
+        assert.ok(splash.drops.every((drop) => drop.y + drop.radius < 520 - 128));
+      }
+      assert.deepEqual(orcaSplashes(time, width, 520, true), []);
+    }
+    assert.deepEqual(orcaSplashes(52.3, width, 520)[0], a);
+  }
 });
 test('海鸥群的数量、速度与间隔由独立种子确定，跨帧匀速向左且不渐隐', () => {
   const a = skyFlocks(1200, 520, 20, 123), b = skyFlocks(1200, 520, 21, 123);

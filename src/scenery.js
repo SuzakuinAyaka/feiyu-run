@@ -43,6 +43,44 @@ export function seaVisitor(time, width, ground, reduced = false) {
   };
 }
 
+export function orcaSplashes(time, width, ground, reduced = false) {
+  if (reduced || time < 18) return [];
+  const cycleTime = (time - 18) % 68;
+  const drift = Math.min(120, width * 0.1);
+  const splashes = [];
+  for (const start of [34, 56]) {
+    for (const kind of ['launch', 'landing']) {
+      const landing = kind === 'landing';
+      const elapsed = cycleTime - start - (landing ? 6.55 : 0);
+      const duration = landing ? 1.5 : 1.3;
+      if (elapsed < 0 || elapsed >= duration) continue;
+      const phase = elapsed / duration;
+      // 水花锚定出入水点，不跟着空中的虎鲸移动；余波独立于动物的显示时长。
+      const x = Math.max(290, width * 0.54) + (landing ? drift : 0), y = ground - 156;
+      const drops = Array.from({ length: landing ? 8 : 6 }, (_, i) => ({
+        x: x + (i % 2 ? 1 : -1) * (3 + (12 + Math.floor(i / 2) * 4) * phase),
+        y: y - Math.sin(phase * Math.PI) * (9 + i % 3 * 4) + phase * 2,
+        radius: 1 + i % 2 * 0.4,
+      }));
+      splashes.push({ kind, x, y, radius: 8 + phase * (landing ? 25 : 18), opacity: Math.sin(phase * Math.PI) * 0.32, drops });
+    }
+  }
+  return splashes;
+}
+
+function drawOrcaSplashes(c, splashes) {
+  c.save(); c.lineWidth = 1.2; c.lineCap = 'round';
+  for (const splash of splashes) {
+    c.globalAlpha = splash.opacity; c.strokeStyle = '#729eaf'; c.fillStyle = '#f5ffff';
+    c.beginPath(); c.ellipse(splash.x, splash.y, splash.radius, 2.5, 0, 0, Math.PI * 2); c.stroke();
+    c.beginPath(); c.ellipse(splash.x, splash.y + 1, splash.radius * 0.65, 1.5, 0, 0, Math.PI); c.stroke();
+    for (const drop of splash.drops) {
+      c.beginPath(); c.ellipse(drop.x, drop.y, drop.radius, drop.radius * 1.6, -0.3, 0, Math.PI * 2); c.fill(); c.stroke();
+    }
+  }
+  c.restore();
+}
+
 function palm(c, tree) {
   c.save(); c.translate(tree.x, tree.y); c.scale(tree.h, tree.h);
   c.globalAlpha = 0.23; c.lineCap = 'round';
@@ -170,6 +208,7 @@ export function drawSea(c, width, height, ground, distance, time, reduced, seed 
   c.globalAlpha = 1;
   const animal = seaVisitor(time, width, ground, reduced);
   if (animal) visitor(c, animal);
+  drawOrcaSplashes(c, orcaSplashes(time, width, ground, reduced));
   c.restore();
   return layout;
 }
