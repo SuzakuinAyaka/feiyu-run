@@ -71,3 +71,7 @@ Top three problems (most visible first), each with the screenshot it shows in an
 - 截图与机器结果在本地 `test-results/scores/`。测试使用独立临时浏览器存储，没有清空用户实际调试浏览器中的最高分。
 - design-taste 源码 Lint 原始结果 **3 FAIL / 0 WARN**，均为用户本轮明确要求的分数氛围光所使用的三处 `text-shadow`，与 Skill 的通用禁阴影规则冲突。按用户当前指令保留，不修改检查器、不添加忽略标记，也不宣称该设计 Lint 已通过。项目自身的语法、引用、测试及构建检查通过。
 - 只在本地修改和验证，未发布。
+
+## 圆角调整（同日）
+
+按用户要求，交互按钮统一 12px 圆角，帮助/确认弹窗及手机跳跃/下蹲底板使用 20px 圆角，未修改游戏逻辑。`npm run check`、`npm run build` 和 Diff 空白检查通过。本地 Chromium 在 1440px 与 375px 检查实际圆角值、弹窗与暂停操作，无横向溢出或运行时异常；截图在 `test-results/rounded/`。已查看桌面确认弹窗、手机帮助与操作区截图。此为低风险 CSS 调整，未新增或重复执行核心逻辑单元测试。圆角取值遵循用户当前要求，覆盖早期设计 Skill 的方角偏好；未发布。

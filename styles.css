@@ -9,6 +9,8 @@
   --paper: #fff;
   --focus: #71b6ff;
   --retry-bg: #3c4043;
+  --radius-control: 12px;
+  --radius-panel: 20px;
   font-family: Arial, "Microsoft YaHei", "PingFang SC", sans-serif;
 }
 :root[data-theme="light"] {
@@ -27,7 +29,7 @@ body[data-state="entering"] #playfield { animation: coast-arrive 620ms ease-out 
 body[data-state="entering"] #utilities, body[data-state="entering"] #preferences { pointer-events: none; }
 @keyframes pixel-depart { to { opacity: 0; transform: translateY(-8px) scale(1.025); } }
 @keyframes coast-arrive { 0%, 30% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
-button { font: inherit; color: inherit; cursor: pointer; border: 0; border-radius: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; border-radius: var(--radius-control); }
 button:disabled { cursor: wait; }
 button:focus-visible, canvas:focus-visible { outline: 3px solid var(--focus); outline-offset: 6px; }
 button:hover { color: var(--focus); }
@@ -63,9 +65,9 @@ body[data-state="over"] #score.new-record { animation: none; }
 #preferences { position: fixed; top: max(16px, env(safe-area-inset-top)); right: 24px; display: flex; gap: 16px; z-index: 2; }
 #preferences button { padding: 10px 4px; min-height: 40px; background: transparent; font-size: 13px; }
 #touch-controls { position: absolute; bottom: max(74px, calc(env(safe-area-inset-bottom) + 65px)); left: 24px; right: 24px; display: none; justify-content: space-between; pointer-events: none; }
-#touch-controls button { width: 80px; min-height: 72px; color: var(--ink); background: #cee4ef; font-size: 26px; touch-action: none; user-select: none; -webkit-user-select: none; pointer-events: auto; }
+#touch-controls button { width: 80px; min-height: 72px; border-radius: var(--radius-panel); color: var(--ink); background: #cee4ef; font-size: 26px; touch-action: none; user-select: none; -webkit-user-select: none; pointer-events: auto; }
 #touch-controls span { display: block; font-size: 14px; margin-top: 3px; }
-dialog { width: min(520px, calc(100% - 36px)); max-height: calc(100svh - 48px); border: 0; padding: 28px; background: var(--paper); color: var(--ink); }
+dialog { width: min(520px, calc(100% - 36px)); max-height: calc(100svh - 48px); border: 0; border-radius: var(--radius-panel); padding: 28px; background: var(--paper); color: var(--ink); }
 dialog::backdrop { background: rgb(0 0 0 / 55%); }
 dialog h2 { font-size: 24px; margin: 0 0 20px; }
 dialog p { font-size: 16px; line-height: 1.65; }
