@@ -65,8 +65,11 @@ function updateScore() {
 
 function updateUI() {
   const state = game.state;
+  const arriving = game.entranceRemaining > 0 && state !== 'ready';
+  document.body.classList.toggle('arriving', arriving);
   document.body.dataset.state = state;
-  $('entrance').hidden = state !== 'ready';
+  $('entrance').hidden = state !== 'ready' && !arriving;
+  $('entrance').inert = state !== 'ready';
   $('playfield').hidden = state === 'ready';
   $('start').disabled = loadState !== 'ready';
   $('start-hint').textContent = t(loadState === 'ready' ? touchLayout.matches ? 'readyTouch' : 'ready' : loadState === 'error' ? 'loadFailed' : 'loading');
@@ -97,7 +100,8 @@ function updateUI() {
       tone(190, 0.23); clearInput(); $('continue').focus({ preventScroll: true });
     } else if (state === 'paused') {
       announce('announcePaused'); $('continue').focus({ preventScroll: true });
-    } else if (state === 'running') announce('announceRunning');
+    } else if (state === 'entering') announce('announceEntering');
+    else if (state === 'running') announce('announceRunning');
     previousState = state;
   }
 }
@@ -105,24 +109,23 @@ function updateUI() {
 function hideDeparture() {
   clearTimeout(departureTimer);
   $('departure-message').hidden = true;
-  document.body.classList.remove('arriving');
+}
+
+function showDeparture() {
+  $('departure-message').hidden = false;
+  departureTimer = setTimeout(hideDeparture, 3400);
 }
 
 function begin() {
-  if (!renderer || modalOpen()) return;
+  if (!renderer || modalOpen() || !['ready', 'over'].includes(game.state)) return;
   const fromEntrance = game.state === 'ready';
-  clearInput(); hideDeparture(); startingBest = best; game.start(); lastTime = 0;
+  clearInput(); hideDeparture(); startingBest = best; game.start({ entrance: fromEntrance }); lastTime = 0;
+  document.body.style.setProperty('--arrival-progress', '0');
   renderer.resetScenery();
   updateUI(); renderer.draw(game); $('scene').focus({ preventScroll: true });
-  if (fromEntrance) {
-    // 文案属于独立装饰层，保留约 3 秒，绝不等待它结束才启动游戏或接收输入。
-    $('departure-message').hidden = false;
-    document.body.classList.add('arriving');
-    departureTimer = setTimeout(hideDeparture, 3400);
-  }
 }
 function pause() {
-  if (game.state !== 'running') return;
+  if (game.state !== 'running' && game.state !== 'entering') return;
   clearInput(); game.pause(); updateUI();
 }
 function resume() {
@@ -184,7 +187,7 @@ $('theme').addEventListener('click', () => {
 $('language').addEventListener('click', () => {
   preferences.locale = preferences.locale === 'zh-CN' ? 'en' : 'zh-CN';
   savePreference(storage, 'locale', preferences.locale); refreshPreferences();
-  const key = game.state === 'over' ? 'announceOver' : game.state === 'paused' ? 'announcePaused' : game.state === 'running' ? 'announceRunning' : loadState === 'ready' ? 'announceReady' : loadState === 'error' ? 'announceError' : 'loading';
+  const key = game.state === 'over' ? 'announceOver' : game.state === 'paused' ? 'announcePaused' : game.state === 'entering' ? 'announceEntering' : game.state === 'running' ? 'announceRunning' : loadState === 'ready' ? 'announceReady' : loadState === 'error' ? 'announceError' : 'loading';
   announce(key, { score: game.score });
   if (game.state === 'running') $('scene').focus({ preventScroll: true });
 });
@@ -262,7 +265,14 @@ matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (event
 function frame(time) {
   if (renderer && game.state !== 'ready') {
     const dt = lastTime ? (time - lastTime) / 1000 : 0;
-    game.update(dt); renderer.draw(game);
+    const wasEntering = game.state === 'entering';
+    game.update(dt);
+    if (wasEntering) {
+      const progress = 1 - game.entranceRemaining / 3;
+      document.body.style.setProperty('--arrival-progress', String(progress * progress * (3 - 2 * progress)));
+      if (game.state === 'running') { clearInput(); showDeparture(); }
+    }
+    renderer.draw(game);
     if (game.state !== previousState) updateUI();
     else if (game.state === 'running') updateScore();
   }

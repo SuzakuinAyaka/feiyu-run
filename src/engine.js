@@ -14,6 +14,8 @@ export class Runner {
   }
 
   reset() {
+    this.entranceRemaining = 0;
+    this.entranceElapsed = 0;
     this.time = 0;
     this.distance = 0;
     this.speed = 330;
@@ -22,15 +24,18 @@ export class Runner {
     this.obstacles = [];
   }
 
-  start() { this.reset(); this.state = 'running'; }
+  start({ entrance = false } = {}) {
+    this.reset(); this.entranceRemaining = entrance ? 3 : 0;
+    this.state = entrance ? 'entering' : 'running';
+  }
   resize(width) { this.width = Math.max(600, width); }
   pause() {
-    if (this.state !== 'running') return;
+    if (this.state !== 'running' && this.state !== 'entering') return;
     this.state = 'paused';
     this.player.holding = false;
     this.player.ducking = false;
   }
-  resume() { if (this.state === 'paused') this.state = 'running'; }
+  resume() { if (this.state === 'paused') this.state = this.entranceRemaining > 0 ? 'entering' : 'running'; }
   jump() {
     if (this.state !== 'running' || this.player.y < 0 || this.player.vy < 0 || this.player.ducking) return false;
     this.player.vy = -590;
@@ -61,6 +66,12 @@ export class Runner {
   }
 
   update(delta) {
+    if (this.state === 'entering' && Number.isFinite(delta) && delta > 0) {
+      this.entranceRemaining = Math.max(0, this.entranceRemaining - delta);
+      if (this.entranceRemaining < 1e-9) { this.entranceRemaining = 0; this.state = 'running'; }
+      this.entranceElapsed = 3 - this.entranceRemaining;
+      return;
+    }
     if (this.state !== 'running' || !Number.isFinite(delta) || delta <= 0) return;
     let remaining = Math.min(delta, 0.05);
     while (remaining > 0 && this.state === 'running') {

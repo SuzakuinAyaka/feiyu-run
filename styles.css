@@ -23,9 +23,13 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--entrance); color: var(--entrance-ink); }
 body:not([data-state="ready"]) { background: var(--sky); color: var(--ink); color-scheme: light; }
-body.arriving { transition: background-color 300ms ease; }
-body.arriving #playfield { animation: coast-arrive 180ms ease-out both; }
-@keyframes coast-arrive { from { opacity: 0; } to { opacity: 1; } }
+body.arriving { color: color-mix(in srgb, var(--ink) calc(var(--arrival-progress, 0) * 100%), var(--entrance-ink)); }
+body.arriving #entrance {
+  position: fixed; inset: 0; z-index: 1; width: 100%; margin: 0;
+  padding-inline: max(24px, calc((100% - 600px) / 2));
+  background: var(--entrance); color: var(--entrance-ink);
+  opacity: calc(1 - var(--arrival-progress, 0)); pointer-events: none;
+}
 #departure-message { position: fixed; top: 13svh; left: 50%; transform: translateX(-50%); margin: 0; max-width: calc(100% - 48px); width: max-content; text-align: center; color: var(--ink); font-size: 24px; line-height: 1.5; pointer-events: none; animation: departure-note 3400ms linear both; }
 @keyframes departure-note { 0% { opacity: 0; } 5%, 93% { opacity: 1; } 100% { opacity: 0; } }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; border-radius: var(--radius-control); }
@@ -54,7 +58,7 @@ button:active { opacity: 0.7; }
 }
 body[data-state="paused"] #score.new-record { animation-play-state: paused; }
 body[data-state="over"] #score.new-record { animation: none; }
-#overlay { position: absolute; top: 34%; left: 50%; transform: translateX(-50%); width: min(90%, 360px); text-align: center; }
+#overlay { position: absolute; z-index: 3; top: 34%; left: 50%; transform: translateX(-50%); width: min(90%, 360px); text-align: center; }
 #overlay h2 { margin: 0 0 12px; font-size: 24px; letter-spacing: 0.1em; }
 #overlay p { margin: 0 0 20px; font-size: 16px; line-height: 1.5; }
 #continue { padding: 12px 26px; color: var(--paper); background: var(--accent); min-height: 44px; }
@@ -95,8 +99,8 @@ dialog form button { padding: 12px 22px; background: var(--accent); color: var(-
 }
 @media (prefers-reduced-motion: reduce) {
   #score.new-record { animation: none; }
-  body.arriving { transition: none; }
-  body.arriving #playfield, #departure-message { animation: none; }
+  body.arriving #entrance { opacity: 0; }
+  #departure-message { animation: none; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
   #entrance { padding-top: 15svh; }

@@ -97,28 +97,30 @@ export class Renderer {
 
   draw(game) {
     const c = this.c, w = this.width, h = this.height, ground = this.ground;
+    // 入场跑动只用于绘制，接续到正式跑酷；不计入得分或推进障碍生成时间。
+    const distance = game.distance + (game.entranceElapsed || 0) * 330;
     c.clearRect(0, 0, w, h);
     c.fillStyle = '#eaf5fa'; c.fillRect(0, 0, w, h);
-    const drift = this.reduced ? 0 : game.distance * 0.045;
+    const drift = this.reduced ? 0 : distance * 0.045;
     [0.31, 0.65, 0.94].forEach((f, i) => {
       const x = ((w * f - drift * (0.7 + i * 0.2)) % (w + 180) + w + 180) % (w + 180) - 60;
       this.cloud(x, ground - 270 - (i % 2) * 55, 38 + i * 7);
     });
-    const scenery = drawSea(c, w, h, ground, game.distance, game.time, this.reduced, this.scenerySeed);
+    const scenery = drawSea(c, w, h, ground, distance, game.time, this.reduced, this.scenerySeed);
     // 先画完整椰树，随后绘制沙地、障碍与角色；重叠时由前景遮挡，不隐藏整棵树。
     drawPalms(c, scenery);
     c.fillStyle = '#f2eada'; c.fillRect(0, ground, w, h - ground);
-    drawSand(c, scenery, w, game.distance, this.reduced);
+    drawSand(c, scenery, w, distance, this.reduced);
     c.fillStyle = '#8caaad'; c.fillRect(0, ground, w, 2);
     c.fillStyle = '#c7bfae';
     for (let i = 0; i < Math.ceil(w / 40) + 2; i++) {
-      const x = ((i * 47 - game.distance) % (w + 70) + w + 70) % (w + 70);
+      const x = ((i * 47 - distance) % (w + 70) + w + 70) % (w + 70);
       c.fillRect(x, ground + 9 + (i % 3) * 7, i % 2 ? 5 : 10, 2);
     }
     for (const obstacle of game.obstacles) this.obstacle(obstacle, ground, game.time);
     const p = game.player;
     const index = game.state === 'over' ? 5 : p.y < 0 ? 3 : p.ducking ? 4 : -1;
-    const pose = runPose(game.distance, this.reduced);
+    const pose = runPose(distance, this.reduced);
     const frame = index >= 0 ? frames[index] : runFrames[pose.frame];
     const height = index < 0 ? frame.h / 4.1 : index === 4 ? 58 : index === 5 ? 78 : 102;
     const width = frame.w / frame.h * height;
