@@ -1,3 +1,5 @@
+import { runPose } from './animation.js';
+
 const frames = [
   { x: 22, y: 40, w: 495, h: 510 },
   { x: 540, y: 40, w: 480, h: 510 },
@@ -6,8 +8,19 @@ const frames = [
   { x: 523, y: 650, w: 510, h: 360 },
   { x: 1090, y: 610, w: 435, h: 405 },
 ];
+// 按实际透明轮廓取帧，统一缩放倍率并对齐脚底，避免生成图的留白差异造成跳动。
+const runFrames = [
+  { x: 19, y: 85, w: 351, h: 410 },
+  { x: 417, y: 83, w: 331, h: 410 },
+  { x: 776, y: 82, w: 338, h: 413 },
+  { x: 1152, y: 83, w: 340, h: 408 },
+  { x: 22, y: 565, w: 349, h: 405 },
+  { x: 406, y: 560, w: 342, h: 414 },
+  { x: 777, y: 562, w: 342, h: 412 },
+  { x: 1154, y: 561, w: 360, h: 394 },
+];
 
-export function drawPixelAvatar(canvas) {
+export function drawPixelAvatar(canvas, theme = 'dark') {
   const c = canvas.getContext('2d');
   c.clearRect(0, 0, 48, 56);
   // 入口专用的小像素形象；进入游戏才使用完整动漫角色。
@@ -33,17 +46,20 @@ export function drawPixelAvatar(canvas) {
     '     ss  ss         ',
     '     kk  kk         ',
   ];
-  const colors = { a: '#777d86', w: '#d3d6da', h: '#999ea6', s: '#c0c3c8', k: '#383b40', m: '#72767e', d: '#767c85', b: '#535962' };
+  const colors = theme === 'light'
+    ? { a: '#626970', w: '#b8bdc2', h: '#5f6368', s: '#a4a8ad', k: '#30343a', m: '#4b5056', d: '#656b72', b: '#3f444b' }
+    : { a: '#777d86', w: '#d3d6da', h: '#999ea6', s: '#c0c3c8', k: '#383b40', m: '#72767e', d: '#767c85', b: '#535962' };
   pixels.forEach((row, y) => [...row].forEach((p, x) => {
     if (colors[p]) { c.fillStyle = colors[p]; c.fillRect(2 + x * 2, 8 + y * 2, 2, 2); }
   }));
 }
 
 export class Renderer {
-  constructor(canvas, sprite) {
+  constructor(canvas, sprite, runSprite) {
     this.canvas = canvas;
     this.c = canvas.getContext('2d');
     this.sprite = sprite;
+    this.runSprite = runSprite;
     this.reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.resize();
   }
@@ -95,12 +111,17 @@ export class Renderer {
     }
     for (const obstacle of game.obstacles) this.obstacle(obstacle, ground, game.time);
     const p = game.player;
-    const index = game.state === 'over' ? 5 : p.y < 0 ? 3 : p.ducking ? 4 : [0, 1, 2, 1][Math.floor(game.time * 10) % 4];
-    const frame = frames[index];
-    const height = index === 4 ? 58 : index === 5 ? 78 : 102;
+    const index = game.state === 'over' ? 5 : p.y < 0 ? 3 : p.ducking ? 4 : -1;
+    const pose = runPose(game.distance, this.reduced);
+    const frame = index >= 0 ? frames[index] : runFrames[pose.frame];
+    const height = index < 0 ? frame.h / 4.1 : index === 4 ? 58 : index === 5 ? 78 : 102;
     const width = frame.w / frame.h * height;
     // 碰撞只覆盖前方身体，飘动头发与尾巴不造成惩罚。
-    c.drawImage(this.sprite, frame.x, frame.y, frame.w, frame.h, 132 - width, ground + p.y - height + 2, width, height);
+    c.save();
+    c.translate(116, ground + p.y + 2 + (index < 0 ? pose.bob : 0));
+    if (index < 0) c.rotate(pose.lean);
+    c.drawImage(index < 0 ? this.runSprite : this.sprite, frame.x, frame.y, frame.w, frame.h, 132 - width - 116, -height, width, height);
+    c.restore();
   }
 
   obstacle(o, ground, time) {

@@ -1,30 +1,34 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#202124">
-  <meta name="description" content="点按大肥鱼或按空格键，和蓝色鲸鱼女仆一起沿着海岸奔跑。免费静态同人跑酷小游戏。">
+  <meta name="description" data-i18n-content="description" content="点按大肥鱼或按空格键，和蓝色鲸鱼女仆一起沿着海岸奔跑。免费静态同人跑酷小游戏。">
   <title>大肥鱼快跑 · Feiyu Run</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <script>
+    // 首次绘制前恢复手动主题，避免浅色入口闪过深色；不读取系统主题。
+    try { document.documentElement.dataset.theme = localStorage.getItem('feiyu-run.theme') === 'light' ? 'light' : 'dark'; } catch { /* 保留深色默认值。 */ }
+  </script>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body data-state="ready">
-  <main id="game" aria-label="大肥鱼快跑">
-    <h1 class="sr-only">大肥鱼快跑</h1>
-    <section id="entrance" aria-label="游戏入口">
+  <main id="game" aria-label="大肥鱼快跑" data-i18n-aria-label="title">
+    <h1 class="sr-only" data-i18n="title">大肥鱼快跑</h1>
+    <section id="entrance" aria-label="游戏入口" data-i18n-aria-label="entrance">
       <button id="start" type="button" aria-describedby="start-hint" disabled>
         <canvas id="pixel-avatar" width="48" height="56" aria-hidden="true"></canvas>
-        <span class="sr-only">开始大肥鱼快跑</span>
+        <span class="sr-only" data-i18n="start">开始大肥鱼快跑</span>
       </button>
       <p id="start-hint">大肥鱼正在赶来…</p>
-      <p id="load-error" hidden>角色素材未能加载，请检查网络后重试。</p>
-      <button id="retry-load" type="button" hidden>重新加载</button>
+      <p id="load-error" data-i18n="loadError" hidden>角色素材未能加载，请检查网络后重试。</p>
+      <button id="retry-load" data-i18n="retry" type="button" hidden>重新加载</button>
     </section>
 
     <div id="playfield" hidden>
-      <canvas id="scene" tabindex="0" aria-label="跑酷画面。空格或上方向键跳跃，按住跳得更高；下方向键下蹲；P 或 Escape 暂停。"></canvas>
-      <div id="scoreboard" aria-label="分数">
+      <canvas id="scene" tabindex="0" data-i18n-aria-label="scene" aria-label="跑酷画面。空格或上方向键跳跃，按住跳得更高；下方向键下蹲；P 或 Escape 暂停。"></canvas>
+      <div id="scoreboard" data-i18n-aria-label="scores" aria-label="分数">
         <span><span class="score-label">HI</span> <span id="best">00000</span></span>
         <span id="score">00000</span>
       </div>
@@ -33,34 +37,38 @@
         <p id="overlay-note">海岸线会在这里等你。</p>
         <button id="continue" type="button">继续跑</button>
       </div>
-      <div id="touch-controls" aria-label="触屏操作">
-        <button id="duck" type="button" aria-label="按住下蹲">↓<span>下蹲</span></button>
-        <button id="jump" type="button" aria-label="跳跃，按住跳得更高">↑<span>跳跃</span></button>
+      <div id="touch-controls" data-i18n-aria-label="touch" aria-label="触屏操作">
+        <button id="duck" type="button" data-i18n-aria-label="duckLabel" aria-label="按住下蹲">↓<span data-i18n="duck">下蹲</span></button>
+        <button id="jump" type="button" data-i18n-aria-label="jumpLabel" aria-label="跳跃，按住跳得更高">↑<span data-i18n="jump">跳跃</span></button>
       </div>
     </div>
 
-    <nav id="utilities" aria-label="游戏设置">
+    <nav id="preferences" data-i18n-aria-label="preferences" aria-label="外观与语言">
+      <button id="theme" type="button">浅色模式</button>
+      <button id="language" type="button" data-i18n="language" data-i18n-aria-label="switchLanguage">English</button>
+    </nav>
+    <nav id="utilities" data-i18n-aria-label="settings" aria-label="游戏设置">
       <button id="pause" type="button" hidden>暂停</button>
-      <button id="home" type="button" hidden>返回入口</button>
+      <button id="home" data-i18n="home" type="button" hidden>返回入口</button>
       <button id="sound" type="button" aria-pressed="false">音效：关</button>
-      <button id="help" type="button">操作说明</button>
+      <button id="help" data-i18n="help" type="button">操作说明</button>
     </nav>
     <p id="status" class="sr-only" role="status" aria-live="polite"></p>
-    <noscript><p class="no-script">大肥鱼快跑需要 JavaScript，请在浏览器中启用后刷新。</p></noscript>
+    <noscript><p class="no-script" data-i18n="noScript">大肥鱼快跑需要 JavaScript，请在浏览器中启用后刷新。</p></noscript>
   </main>
 
   <dialog id="help-dialog" aria-labelledby="help-title">
-    <h2 id="help-title">大肥鱼快跑</h2>
-    <p>沿着海岸线，跳过礁石和漂流木，下蹲躲过海鸥。跑得越远，速度越快。</p>
+    <h2 id="help-title" data-i18n="title">大肥鱼快跑</h2>
+    <p data-i18n="howTo">沿着海岸线，跳过礁石和漂流木，下蹲躲过海鸥。跑得越远，速度越快。</p>
     <dl>
-      <div><dt>跳跃</dt><dd>空格 / ↑ / W，按住跳得更高</dd></div>
-      <div><dt>下蹲</dt><dd>按住 ↓ / S，空中按下快速落地</dd></div>
-      <div><dt>暂停</dt><dd>P / Escape；离开页面自动暂停</dd></div>
-      <div><dt>重开</dt><dd>结束后按空格 / Enter，或点按重开</dd></div>
+      <div><dt data-i18n="jump">跳跃</dt><dd data-i18n="jumpHelp">空格 / ↑ / W，按住跳得更高</dd></div>
+      <div><dt data-i18n="duck">下蹲</dt><dd data-i18n="duckHelp">按住 ↓ / S，空中按下快速落地</dd></div>
+      <div><dt data-i18n="pause">暂停</dt><dd data-i18n="pauseHelp">P / Escape；离开页面自动暂停</dd></div>
+      <div><dt data-i18n="restart">重开</dt><dd data-i18n="restartHelp">结束后按空格 / Enter，或点按重开</dd></div>
     </dl>
-    <p>手机使用屏幕下方的两个按钮。最高分仅保存在当前浏览器；音效默认关闭。</p>
-    <p class="credit">非官方同人项目，与 DeepSeek 无隶属、合作或授权关系。角色依据用户提供的参考图生成，代码与游戏图形自行实现。</p>
-    <form method="dialog"><button autofocus>知道了</button></form>
+    <p data-i18n="phoneHelp">手机使用屏幕下方的两个按钮。最高分仅保存在当前浏览器；音效默认关闭。</p>
+    <p class="credit" data-i18n="credit">非官方同人项目，与 DeepSeek 无隶属、合作或授权关系。角色依据用户提供的参考图生成，代码与游戏图形自行实现。</p>
+    <form method="dialog"><button autofocus data-i18n="gotIt">知道了</button></form>
   </dialog>
   <script type="module" src="./src/game.js"></script>
 </body>

@@ -1,9 +1,16 @@
 import { Runner } from './engine.js';
 import { Renderer, drawPixelAvatar } from './render.js';
+import { readPreferences, savePreference } from './preferences.js';
+import { applyTranslations, translate } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const game = new Runner();
 let renderer, soundEnabled = false, audio, lastTime = 0, previousState = 'ready', loadAttempt = 0;
+let storage;
+try { storage = window.localStorage; } catch { /* 隐私模式允许无存储游戏。 */ }
+const preferences = readPreferences(storage);
+const t = (key, values) => translate(preferences.locale, key, values);
+let loadState = 'loading', entering = false, pauseAfterEntry = false;
 const jumpPointers = new Set(), duckPointers = new Set();
 const jumpKeys = new Set(['Space', 'ArrowUp', 'KeyW']);
 const duckKeys = new Set(['ArrowDown', 'KeyS']);
@@ -11,9 +18,18 @@ const heldJumpKeys = new Set(), heldDuckKeys = new Set();
 let best = 0;
 try { best = Math.max(0, Number(localStorage.getItem('feiyu-run.best')) || 0); } catch { /* 禁用存储时仍可游戏。 */ }
 best = Number.isFinite(best) ? Math.min(99999999, Math.floor(best)) : 0;
-drawPixelAvatar($('pixel-avatar'));
+drawPixelAvatar($('pixel-avatar'), preferences.theme);
 
-function announce(message) { $('status').textContent = message; }
+function announce(key, values) { $('status').textContent = t(key, values); }
+
+function refreshPreferences() {
+  document.documentElement.dataset.theme = preferences.theme;
+  document.documentElement.lang = preferences.locale;
+  document.title = t('pageTitle');
+  applyTranslations(document, preferences.locale);
+  drawPixelAvatar($('pixel-avatar'), preferences.theme);
+  updateUI();
+}
 
 function tone(frequency, duration = 0.09) {
   if (!soundEnabled) return;
@@ -36,38 +52,57 @@ function clearInput() {
 
 function updateUI() {
   const state = game.state;
-  document.body.dataset.state = state;
-  $('entrance').hidden = state !== 'ready';
-  $('playfield').hidden = state === 'ready';
+  document.body.dataset.state = entering ? 'entering' : state;
+  $('entrance').hidden = state !== 'ready' && !entering;
+  $('playfield').hidden = state === 'ready' && !entering;
+  $('start').disabled = loadState !== 'ready' || entering;
+  $('start-hint').textContent = t(entering ? 'entering' : loadState === 'ready' ? 'ready' : loadState === 'error' ? 'loadFailed' : 'loading');
   $('pause').hidden = state === 'ready' || state === 'over';
-  $('pause').textContent = state === 'paused' ? '继续' : '暂停';
+  $('pause').textContent = t(state === 'paused' ? 'resume' : 'pause');
   $('home').hidden = state === 'ready';
   $('overlay').hidden = state !== 'paused' && state !== 'over';
-  $('touch-controls').hidden = state !== 'running';
+  $('touch-controls').hidden = state !== 'running' || entering;
+  $('theme').hidden = state !== 'ready' || entering;
+  $('theme').textContent = t(preferences.theme === 'dark' ? 'lightTheme' : 'darkTheme');
+  $('theme').setAttribute('aria-label', t(preferences.theme === 'dark' ? 'switchLight' : 'switchDark'));
+  $('sound').textContent = t(soundEnabled ? 'soundOn' : 'soundOff');
+  document.querySelector('meta[name="theme-color"]').content = state === 'ready' && !entering ? preferences.theme === 'dark' ? '#202124' : '#ffffff' : '#eaf5fa';
   $('score').textContent = String(game.score).padStart(5, '0');
   $('best').textContent = String(best).padStart(5, '0');
-  $('overlay-title').textContent = state === 'over' ? '本局结束' : '休息一下';
-  $('overlay-note').textContent = state === 'over' ? `跑了 ${game.score} 分，再向前一点？` : '海岸线会在这里等你。';
-  $('continue').textContent = state === 'over' ? '再跑一次' : '继续跑';
+  $('overlay-title').textContent = t(state === 'over' ? 'overTitle' : 'pausedTitle');
+  $('overlay-note').textContent = t(state === 'over' ? 'overNote' : 'pausedNote', { score: game.score });
+  $('continue').textContent = t(state === 'over' ? 'again' : 'continue');
   if (state !== previousState) {
     if (state === 'over') {
       best = Math.max(best, game.score);
       try { localStorage.setItem('feiyu-run.best', String(best)); } catch { /* 本次会话仍记录最高分。 */ }
       $('best').textContent = String(best).padStart(5, '0');
-      announce(`本局结束，${game.score} 分。按空格或 Enter 再跑一次。`);
+      announce('announceOver', { score: game.score });
       tone(190, 0.23); clearInput(); $('continue').focus({ preventScroll: true });
     } else if (state === 'paused') {
-      announce('游戏已暂停。请主动继续。'); $('continue').focus({ preventScroll: true });
-    } else if (state === 'running') announce('开始跑酷。空格跳跃，下方向键下蹲。');
+      announce('announcePaused'); $('continue').focus({ preventScroll: true });
+    } else if (state === 'running') announce('announceRunning');
     previousState = state;
   }
 }
 
 function begin() {
-  if (!renderer || $('help-dialog').open) return;
-  clearInput(); game.start(); lastTime = 0; updateUI(); renderer.draw(game); $('scene').focus({ preventScroll: true });
+  if (!renderer || entering || $('help-dialog').open) return;
+  const fromEntrance = game.state === 'ready';
+  clearInput();
+  const start = () => {
+    entering = false; game.start(); lastTime = 0; updateUI(); renderer.draw(game); $('scene').focus({ preventScroll: true });
+    if (pauseAfterEntry || document.hidden) pause();
+    pauseAfterEntry = false;
+  };
+  if (fromEntrance && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    entering = true; pauseAfterEntry = false; renderer.draw(game); updateUI();
+    // 入场期间引擎仍处于 ready，障碍和计分均在过渡结束后开始。
+    setTimeout(start, 620);
+  } else start();
 }
 function pause() {
+  if (entering) { pauseAfterEntry = true; return; }
   if (game.state !== 'running') return;
   clearInput(); game.pause(); updateUI();
 }
@@ -83,24 +118,27 @@ function activate() {
 
 async function loadSprite() {
   const attempt = ++loadAttempt;
-  $('start').disabled = true; $('start-hint').textContent = '大肥鱼正在赶来…';
+  loadState = 'loading'; updateUI();
   $('load-error').hidden = true; $('retry-load').hidden = true;
-  const sprite = new Image();
+  const sprite = new Image(), runSprite = new Image();
   const timer = setTimeout(() => failed(), 15000);
   function failed() {
     if (attempt !== loadAttempt) return;
     clearTimeout(timer); loadAttempt++;
-    $('start-hint').textContent = '大肥鱼还没赶到'; $('load-error').hidden = false; $('retry-load').hidden = false;
-    announce('角色素材加载失败，可以重新加载。');
+    loadState = 'error'; updateUI(); $('load-error').hidden = false; $('retry-load').hidden = false;
+    announce('announceError');
   }
-  sprite.onload = () => {
+  const loaded = (image, source) => new Promise((resolve, reject) => {
+    image.onload = resolve; image.onerror = reject; image.src = new URL(source, import.meta.url).href;
+  });
+  Promise.all([
+    loaded(sprite, '../assets/feiyu-sprites.png'),
+    loaded(runSprite, '../assets/feiyu-run-cycle.png'),
+  ]).then(() => {
     if (attempt !== loadAttempt) return;
-    clearTimeout(timer); renderer = new Renderer($('scene'), sprite); game.resize(renderer.width);
-    $('start').disabled = false; $('start-hint').textContent = '点按大肥鱼或按空格键即可开玩';
-    announce('游戏已准备好。点按大肥鱼或按空格键开始。');
-  };
-  sprite.onerror = failed;
-  sprite.src = new URL('../assets/feiyu-sprites.png', import.meta.url).href;
+    clearTimeout(timer); renderer = new Renderer($('scene'), sprite, runSprite); game.resize(renderer.width);
+    loadState = 'ready'; updateUI(); announce('announceReady');
+  }).catch(failed);
 }
 
 $('start').addEventListener('click', begin);
@@ -111,8 +149,19 @@ $('home').addEventListener('click', () => {
   clearInput(); game.reset(); game.state = 'ready'; updateUI(); $('start').focus({ preventScroll: true });
 });
 $('sound').addEventListener('click', () => {
-  soundEnabled = !soundEnabled; $('sound').textContent = `音效：${soundEnabled ? '开' : '关'}`;
+  soundEnabled = !soundEnabled; updateUI();
   $('sound').setAttribute('aria-pressed', String(soundEnabled)); tone(520);
+});
+$('theme').addEventListener('click', () => {
+  preferences.theme = preferences.theme === 'dark' ? 'light' : 'dark';
+  savePreference(storage, 'theme', preferences.theme); refreshPreferences();
+});
+$('language').addEventListener('click', () => {
+  preferences.locale = preferences.locale === 'zh-CN' ? 'en' : 'zh-CN';
+  savePreference(storage, 'locale', preferences.locale); refreshPreferences();
+  const key = game.state === 'over' ? 'announceOver' : game.state === 'paused' ? 'announcePaused' : game.state === 'running' ? 'announceRunning' : loadState === 'ready' ? 'announceReady' : loadState === 'error' ? 'announceError' : 'loading';
+  announce(key, { score: game.score });
+  if (game.state === 'running') $('scene').focus({ preventScroll: true });
 });
 $('help').addEventListener('click', () => { pause(); $('help-dialog').showModal(); });
 $('help-dialog').addEventListener('close', () => {
@@ -121,6 +170,7 @@ $('help-dialog').addEventListener('close', () => {
 });
 
 document.addEventListener('keydown', (event) => {
+  if (entering) { if (['Space', 'ArrowUp', 'ArrowDown'].includes(event.code)) event.preventDefault(); return; }
   if ($('help-dialog').open || event.ctrlKey || event.metaKey || event.altKey) return;
   const code = event.code;
   // 保留 Tab 选中设置按钮后的原生 Space/Enter 激活行为。
@@ -184,4 +234,4 @@ function frame(time) {
   }
   lastTime = time; requestAnimationFrame(frame);
 }
-updateUI(); void loadSprite(); requestAnimationFrame(frame);
+refreshPreferences(); void loadSprite(); requestAnimationFrame(frame);
