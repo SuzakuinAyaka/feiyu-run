@@ -6,7 +6,7 @@ export function sceneryLayout(width, height, ground) {
     const h = 2 + fraction(i + 3) * 4;
     return { x: fraction(i + 7) * width, y: ground + 48 + h + fraction(i + 11) * Math.max(0, sand - 70 - 2 * h), w: 8 + fraction(i + 19) * 16, h, tilt: fraction(i + 31) * 0.6 - 0.3 };
   }) : [];
-  const palms = sand > 110 ? [0.34, 0.82].map((x, i) => ({ x: width * x, y: height - 20, h: Math.min(110, (sand - 68) / 1.25) * (i ? 0.85 : 1) })) : [];
+  const palms = [0.34, 0.82].map((x, i) => ({ x: width * x, y: ground + 2, h: Math.min(110, ground * 0.22) * (i ? 0.85 : 1) }));
   return { seaTop: ground - 195, quietTop: ground - 120, sandTop: ground + 48, height, stones, palms };
 }
 
@@ -27,15 +27,30 @@ export function seaVisitor(time, width, ground, reduced = false) {
   };
 }
 
-function palm(c, tree) {
+export function palmOpacity(tree, foreground = []) {
+  const left = tree.x - tree.h * 0.31, right = tree.x + tree.h * 0.75;
+  return foreground.reduce((opacity, box) => {
+    const gap = Math.max(box.x - 32 - right, left - (box.x + box.w + 32), 0);
+    return Math.min(opacity, gap / 48, 1);
+  }, 1);
+}
+
+function palm(c, tree, opacity) {
   c.save(); c.translate(tree.x, tree.y); c.scale(tree.h, tree.h);
-  c.globalAlpha = 0.12; c.strokeStyle = '#658f84'; c.lineCap = 'round'; c.lineWidth = 0.045;
+  c.globalAlpha = 0.12 * opacity; c.strokeStyle = '#658f84'; c.lineCap = 'round'; c.lineWidth = 0.045;
   c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(0.02, -0.55, 0.22, -1); c.stroke();
   c.lineWidth = 0.035;
   for (const [x, y] of [[-0.48, 0.12], [-0.45, -0.02], [-0.3, -0.15], [-0.1, -0.18], [0.28, -0.16], [0.46, -0.04], [0.5, 0.12]]) {
     c.beginPath(); c.moveTo(0.22, -1); c.quadraticCurveTo(0.22 + x * 0.65, -1.18, 0.22 + x, -1 + y); c.stroke();
   }
   c.restore();
+}
+
+export function drawPalms(c, layout, foreground) {
+  for (const tree of layout.palms) {
+    const opacity = palmOpacity(tree, foreground);
+    if (opacity > 0) palm(c, tree, opacity);
+  }
 }
 
 function visitor(c, animal) {
@@ -66,7 +81,7 @@ export function drawSea(c, width, height, ground, distance, time, reduced) {
   c.fillStyle = '#d5ebf2'; c.fillRect(0, layout.seaTop, width, 4);
   const drift = reduced ? 0 : distance * 0.025;
   c.save();
-  // 最后 120 个世界单位仅保留平色海面，远景不会进入障碍判断带。
+  // 海洋动物和波纹不进入跑道上方 120 单位；椰树单独绘制并避让前景。
   c.beginPath(); c.rect(0, layout.seaTop - 30, width, ground - 128 - (layout.seaTop - 30)); c.clip();
   c.fillStyle = '#e0f0f5';
   for (let i = 0; i < 12; i++) {
@@ -81,7 +96,6 @@ export function drawSea(c, width, height, ground, distance, time, reduced) {
 
 export function drawSand(c, layout, width, distance, reduced) {
   c.save(); c.beginPath(); c.rect(0, layout.sandTop, width, Math.max(0, layout.height - layout.sandTop)); c.clip();
-  for (const tree of layout.palms) palm(c, tree);
   c.save(); c.fillStyle = '#8b9f9b'; c.globalAlpha = 0.16;
   const drift = reduced ? 0 : distance * 0.035;
   for (const stone of layout.stones) {

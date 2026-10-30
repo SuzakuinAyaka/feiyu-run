@@ -1,15 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sceneryLayout, seaVisitor } from '../src/scenery.js';
+import { sceneryLayout, seaVisitor, palmOpacity } from '../src/scenery.js';
 import { Runner } from '../src/engine.js';
 
-test('装饰沙石与椰树完全位于跑道下方，横竖屏均保留判断空间', () => {
+test('装饰沙石位于跑道下方，椰树从沙地表面向上生长', () => {
   for (const [width, height] of [[1200, 720], [600, 1300], [900, 320]]) {
     const ground = height * 0.72;
     const layout = sceneryLayout(width, height, ground);
     assert.ok(layout.stones.every((s) => s.y - s.h >= ground + 48));
-    assert.ok(layout.palms.every((p) => p.y - p.h * 1.2 >= ground + 48));
+    assert.ok(layout.palms.length > 0);
+    assert.ok(layout.palms.every((p) => p.y === ground + 2 && p.y - p.h < ground));
   }
+});
+test('椰树避让玩家和障碍，接近时渐隐而非覆盖轮廓', () => {
+  const tree = { x: 400, h: 100 };
+  assert.equal(palmOpacity(tree), 1);
+  assert.equal(palmOpacity(tree, [{ x: 400, w: 43 }]), 0);
+  assert.equal(palmOpacity(tree, [{ x: 540, w: 43 }]), 33 / 48);
+  assert.equal(palmOpacity(tree, [{ x: 600, w: 43 }]), 1);
+  assert.equal(palmOpacity({ x: 150, h: 100 }, [{ x: 30, w: 145 }]), 0);
 });
 test('海豚与虎鲸低频出现、缓慢移动且远离玩家与障碍判断带', () => {
   assert.equal(seaVisitor(0, 1200, 520), null);

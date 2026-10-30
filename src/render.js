@@ -1,5 +1,5 @@
 import { runPose } from './animation.js';
-import { drawSea, drawSand } from './scenery.js';
+import { drawSea, drawSand, drawPalms } from './scenery.js';
 
 const frames = [
   { x: 22, y: 40, w: 495, h: 510 },
@@ -97,6 +97,8 @@ export class Renderer {
       this.cloud(x, ground - 270 - (i % 2) * 55, 38 + i * 7);
     });
     const scenery = drawSea(c, w, h, ground, game.distance, game.time, this.reduced);
+    // 树根锚定地平线，先画远景树，再由沙地遮住根部下方；玩家与障碍附近整树淡出。
+    drawPalms(c, scenery, [{ x: 30, w: 145 }, ...game.obstacles]);
     c.fillStyle = '#f2eada'; c.fillRect(0, ground, w, h - ground);
     drawSand(c, scenery, w, game.distance, this.reduced);
     c.fillStyle = '#8caaad'; c.fillRect(0, ground, w, 2);
