@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sceneryLayout, seaVisitor, palmOpacity } from '../src/scenery.js';
+import { sceneryLayout, seaVisitor, drawPalms } from '../src/scenery.js';
 import { Runner } from '../src/engine.js';
 
 test('装饰沙石位于跑道下方，椰树从沙地表面向上生长', () => {
@@ -12,13 +12,20 @@ test('装饰沙石位于跑道下方，椰树从沙地表面向上生长', () =>
     assert.ok(layout.palms.every((p) => p.y === ground + 2 && p.y - p.h < ground));
   }
 });
-test('椰树避让玩家和障碍，接近时渐隐而非覆盖轮廓', () => {
-  const tree = { x: 400, h: 100 };
-  assert.equal(palmOpacity(tree), 1);
-  assert.equal(palmOpacity(tree, [{ x: 400, w: 43 }]), 0);
-  assert.equal(palmOpacity(tree, [{ x: 540, w: 43 }]), 23 / 48);
-  assert.equal(palmOpacity(tree, [{ x: 600, w: 43 }]), 1);
-  assert.equal(palmOpacity({ x: 150, h: 100 }, [{ x: 30, w: 145 }]), 0);
+test('椰树始终以固定透明度绘制，不因玩家或障碍接近消失', () => {
+  const draw = (foreground) => {
+    const operations = [];
+    const context = new Proxy({}, {
+      get: (_, key) => (...args) => operations.push([key, ...args]),
+      set: (_, key, value) => { operations.push([key, value]); return true; },
+    });
+    drawPalms(context, { palms: [{ x: 400, y: 520, h: 100 }] }, foreground);
+    return operations;
+  };
+  const baseline = draw([]);
+  assert.ok(baseline.length > 0);
+  assert.deepEqual(draw([{ x: 400, w: 43 }]), baseline);
+  assert.deepEqual(draw([{ x: 30, w: 500 }]), baseline);
 });
 test('椰树锚定世界坐标，随前进距离向后移动且相邻间距更大', () => {
   const a = sceneryLayout(2800, 720, 520, 0);

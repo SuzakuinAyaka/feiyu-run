@@ -35,17 +35,9 @@ export function seaVisitor(time, width, ground, reduced = false) {
   };
 }
 
-export function palmOpacity(tree, foreground = []) {
-  const left = tree.x - tree.h * 0.38, right = tree.x + tree.h * 0.85;
-  return foreground.reduce((opacity, box) => {
-    const gap = Math.max(box.x - 32 - right, left - (box.x + box.w + 32), 0);
-    return Math.min(opacity, gap / 48, 1);
-  }, 1);
-}
-
-function palm(c, tree, opacity) {
+function palm(c, tree) {
   c.save(); c.translate(tree.x, tree.y); c.scale(tree.h, tree.h);
-  c.globalAlpha = 0.23 * opacity; c.lineCap = 'round';
+  c.globalAlpha = 0.23; c.lineCap = 'round';
   // 暖棕树干与分节纹理，和绿色羽状树冠明确区分。
   c.fillStyle = '#9b7a58';
   c.beginPath(); c.moveTo(-0.035, 0); c.quadraticCurveTo(-0.015, -0.55, 0.19, -1);
@@ -57,7 +49,7 @@ function palm(c, tree, opacity) {
   }
   const fronds = [[-0.58, 0.18], [-0.55, -0.02], [-0.38, -0.23], [-0.12, -0.32], [0.31, -0.25], [0.54, -0.07], [0.61, 0.16]];
   fronds.forEach(([x, y], i) => {
-    c.fillStyle = i % 2 ? '#73a083' : '#528969'; c.globalAlpha = 0.2 * opacity;
+    c.fillStyle = i % 2 ? '#73a083' : '#528969'; c.globalAlpha = 0.2;
     c.beginPath(); c.moveTo(0.22, -1);
     c.quadraticCurveTo(0.22 + x * 0.48, -1 + y * 0.35 - 0.13, 0.22 + x, -1 + y);
     c.quadraticCurveTo(0.22 + x * 0.45, -1 + y * 0.3 + 0.03, 0.22, -1); c.fill();
@@ -70,18 +62,15 @@ function palm(c, tree, opacity) {
       c.beginPath(); c.moveTo(px - y * length, py + x * length); c.lineTo(px + y * length, py - x * length); c.stroke();
     }
   });
-  c.globalAlpha = 0.26 * opacity; c.fillStyle = '#90704f';
+  c.globalAlpha = 0.26; c.fillStyle = '#90704f';
   for (const [x, y] of [[0.19, -0.96], [0.25, -0.94], [0.22, -0.9]]) {
     c.beginPath(); c.ellipse(x, y, 0.027, 0.035, 0.2, 0, Math.PI * 2); c.fill();
   }
   c.restore();
 }
 
-export function drawPalms(c, layout, foreground) {
-  for (const tree of layout.palms) {
-    const opacity = palmOpacity(tree, foreground);
-    if (opacity > 0) palm(c, tree, opacity);
-  }
+export function drawPalms(c, layout) {
+  for (const tree of layout.palms) palm(c, tree);
 }
 
 function visitor(c, animal) {
@@ -112,7 +101,7 @@ export function drawSea(c, width, height, ground, distance, time, reduced) {
   c.fillStyle = '#d5ebf2'; c.fillRect(0, layout.seaTop, width, 4);
   const drift = reduced ? 0 : distance * 0.025;
   c.save();
-  // 海洋动物和波纹不进入跑道上方 120 单位；椰树单独绘制并避让前景。
+  // 海洋动物和波纹不进入跑道上方 120 单位；椰树在障碍物下方的背景层单独绘制。
   c.beginPath(); c.rect(0, layout.seaTop - 30, width, ground - 128 - (layout.seaTop - 30)); c.clip();
   c.fillStyle = '#e0f0f5';
   for (let i = 0; i < 12; i++) {
