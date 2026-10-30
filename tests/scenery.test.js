@@ -72,6 +72,22 @@ test('海浪仅位于远海，低幅度移动且减少动态效果时保持静�
     assert.deepEqual(seaWaves(width, 520, 10, true), seaWaves(width, 520, 0, true));
   }
 });
+
+test('每 68 秒保留一次海豚，虎鲸增加为两次且保持低透明度与安全距离', () => {
+  const starts = [];
+  let last = null;
+  for (let time = 18; time < 154; time++) {
+    const animal = seaVisitor(time, 1200, 520);
+    if (animal && animal.kind !== last) starts.push([time, animal.kind]);
+    last = animal?.kind ?? null;
+    if (animal) {
+      assert.ok(animal.opacity <= 0.19 && animal.y + 18 < 520 - 120);
+      assert.equal(seaVisitor(time, 1200, 520, true), null);
+    }
+  }
+  assert.deepEqual(starts.filter(([, kind]) => kind === 'dolphin').map(([time]) => time), [18, 86]);
+  assert.deepEqual(starts.filter(([, kind]) => kind === 'orca').map(([time]) => time), [52, 74, 120, 142]);
+});
 test('海鸥群的数量、速度与间隔由独立种子确定，跨帧匀速向左且不渐隐', () => {
   const a = skyFlocks(1200, 520, 20, 123), b = skyFlocks(1200, 520, 21, 123);
   assert.ok(a.length > 0);

@@ -55,8 +55,9 @@ export class Runner {
     const kind = this.time > 8 && roll > 0.68 ? 'gull' : roll > 0.36 ? 'log' : 'rock';
     const shape = kind === 'gull' ? { y: -78, w: 48, h: 22 } : kind === 'log' ? { y: -35, w: 66, h: 35 } : { y: -49, w: 43, h: 49 };
     this.obstacles.push({ kind, x: this.width + 50, ...shape });
-    // 最短 1.4 秒，超过完整跳跃周期，保留下一次动作的准备时间。
-    this.untilNext = 1.4 + this.random() * 0.65;
+    // 30～90 秒逐渐收紧；后期最短 1.15 秒，仍保留完整跳跃及下一次动作的准备时间。
+    const pressure = Math.max(0, Math.min(1, (this.time - 30) / 60));
+    this.untilNext = 1.4 - pressure * 0.25 + this.random() * (0.65 - pressure * 0.1);
   }
 
   update(delta) {

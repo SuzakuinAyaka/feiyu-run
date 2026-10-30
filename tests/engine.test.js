@@ -59,6 +59,24 @@ test('屏幕变窄时障碍进入可视区，单帧卡顿不会穿越整屏', ()
   const g = fresh(); g.resize(600); g.start(); g.update(100);
   assert.ok(g.distance < 25); assert.equal(g.width, 600);
 });
+
+test('障碍间隔在 30 秒后平滑缩短，90 秒后保持下限且保留完整跳跃时间', () => {
+  for (const roll of [0, 0.5, 1]) {
+    const g = new Runner({ random: () => roll });
+    const intervals = [0, 30, 60, 90, 180].map((time) => {
+      g.time = time; g.spawn(); return g.untilNext;
+    });
+    assert.equal(intervals[0], 1.4 + roll * 0.65);
+    assert.equal(intervals[0], intervals[1]);
+    assert.ok(intervals[1] > intervals[2] && intervals[2] > intervals[3]);
+    assert.equal(intervals[3], intervals[4]);
+    assert.ok(intervals[3] >= 1.15 && intervals[3] <= 1.7);
+  }
+  const g = fresh(); g.start(); g.jump();
+  let airborne = 0;
+  do { g.update(1 / 120); airborne += 1 / 120; } while (g.player.y < 0);
+  assert.ok(airborne + 0.3 < 1.15, `完整跳跃 ${airborne} 秒需保留动作准备时间`);
+});
 test('矩形仅边缘相触不判碰撞', () => {
   assert.equal(overlaps({ x: 0, y: 0, w: 10, h: 10 }, { x: 10, y: 0, w: 10, h: 10 }), false);
 });

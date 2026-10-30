@@ -26,9 +26,11 @@ export function sceneryLayout(width, height, ground, distance = 0, reduced = fal
 
 export function seaVisitor(time, width, ground, reduced = false) {
   if (reduced || time < 18) return null;
-  const slot = Math.floor((time - 18) / 34);
-  const elapsed = (time - 18) % 34;
-  const kind = slot % 2 ? 'orca' : 'dolphin';
+  // 保留原有海豚和虎鲸时刻，每轮再加一次虎鲸，不叠加动物或提高运动速度。
+  const cycleTime = (time - 18) % 68;
+  const start = cycleTime >= 56 ? 56 : cycleTime >= 34 ? 34 : 0;
+  const elapsed = cycleTime - start;
+  const kind = start === 0 ? 'dolphin' : 'orca';
   const duration = kind === 'orca' ? 7 : 6;
   if (elapsed >= duration) return null;
   const phase = elapsed / duration;
