@@ -23,12 +23,11 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--entrance); color: var(--entrance-ink); }
 body:not([data-state="ready"]) { background: var(--sky); color: var(--ink); color-scheme: light; }
-body[data-state="entering"] { transition: background-color 580ms ease; }
-body[data-state="entering"] #entrance { position: relative; z-index: 1; color: var(--entrance-ink); animation: pixel-depart 240ms ease-out forwards; }
-body[data-state="entering"] #playfield { animation: coast-arrive 620ms ease-out both; pointer-events: none; }
-body[data-state="entering"] #utilities, body[data-state="entering"] #preferences { pointer-events: none; }
-@keyframes pixel-depart { to { opacity: 0; transform: translateY(-8px) scale(1.025); } }
-@keyframes coast-arrive { 0%, 30% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
+body.arriving { transition: background-color 300ms ease; }
+body.arriving #playfield { animation: coast-arrive 180ms ease-out both; }
+@keyframes coast-arrive { from { opacity: 0; } to { opacity: 1; } }
+#departure-message { position: fixed; top: 13svh; left: 50%; transform: translateX(-50%); margin: 0; max-width: calc(100% - 48px); width: max-content; text-align: center; color: var(--ink); font-size: 24px; line-height: 1.5; pointer-events: none; animation: departure-note 3400ms linear both; }
+@keyframes departure-note { 0% { opacity: 0; } 5%, 93% { opacity: 1; } 100% { opacity: 0; } }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; border-radius: var(--radius-control); }
 button:disabled { cursor: wait; }
 button:focus-visible, canvas:focus-visible { outline: 3px solid var(--focus); outline-offset: 6px; }
@@ -88,11 +87,12 @@ dialog form button { padding: 12px 22px; background: var(--accent); color: var(-
   #utilities { right: 20px; left: 20px; }
   #preferences { right: 20px; }
   #overlay { top: 32%; }
+  #departure-message { font-size: 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
   #score.new-record { animation: none; }
-  body[data-state="entering"] { transition: none; }
-  body[data-state="entering"] #entrance, body[data-state="entering"] #playfield { animation: none; }
+  body.arriving { transition: none; }
+  body.arriving #playfield, #departure-message { animation: none; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
   #entrance { padding-top: 15svh; }

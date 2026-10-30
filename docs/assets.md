@@ -35,4 +35,4 @@ Edit this sprite sheet to fix its game-engine layout. KEEP character design, smo
 
 ## 场景及声音
 
-天空、云、海面、跑道、礁石、漂流木与海鸥由 Canvas 自行绘制。音效由 Web Audio 的振荡器即时合成。没有使用第三方摄影、视频、字体、精灵图或音频。
+天空、太阳、云、海面、跑道、半透明沙石和椰树、远海海豚与虎鲸、前景礁石/漂流木/海鸥均由 Canvas 自行绘制。远景装饰位于 `src/scenery.js`，不新增外部图像或音频请求。音效由 Web Audio 的振荡器即时合成。没有使用第三方摄影、视频、字体、精灵图或音频。

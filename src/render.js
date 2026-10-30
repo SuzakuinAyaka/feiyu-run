@@ -1,4 +1,5 @@
 import { runPose } from './animation.js';
+import { drawSea, drawSand } from './scenery.js';
 
 const frames = [
   { x: 22, y: 40, w: 495, h: 510 },
@@ -93,16 +94,11 @@ export class Renderer {
     const drift = this.reduced ? 0 : game.distance * 0.045;
     [0.31, 0.65, 0.94].forEach((f, i) => {
       const x = ((w * f - drift * (0.7 + i * 0.2)) % (w + 180) + w + 180) % (w + 180) - 60;
-      this.cloud(x, ground - 180 - (i % 2) * 55, 38 + i * 7);
+      this.cloud(x, ground - 270 - (i % 2) * 55, 38 + i * 7);
     });
-    c.fillStyle = '#b3dce9'; c.fillRect(0, ground - 65, w, 65);
-    c.fillStyle = '#cce8f0'; c.fillRect(0, ground - 65, w, 5);
-    c.fillStyle = '#d9edf3';
-    for (let i = 0; i < 13; i++) {
-      const x = ((i * 137 - drift * 1.3) % (w + 150) + w + 150) % (w + 150);
-      c.fillRect(x, ground - 48 + (i % 4) * 10, 20 + i % 3 * 7, 2);
-    }
+    const scenery = drawSea(c, w, h, ground, game.distance, game.time, this.reduced);
     c.fillStyle = '#f2eada'; c.fillRect(0, ground, w, h - ground);
+    drawSand(c, scenery, w, game.distance, this.reduced);
     c.fillStyle = '#8caaad'; c.fillRect(0, ground, w, 2);
     c.fillStyle = '#c7bfae';
     for (let i = 0; i < Math.ceil(w / 40) + 2; i++) {
