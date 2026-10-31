@@ -1,15 +1,21 @@
 const fraction = (value) => { const n = Math.sin(value * 127.1 + 311.7) * 43758.5453; return n - Math.floor(n); };
+const beachPalette = [
+  ['#d88b78', '#ac6b60'], ['#d9a464', '#a77a49'], ['#c7b16d', '#978652'],
+  ['#7faeaa', '#5f8785'], ['#83a8c6', '#63839f'], ['#ad97c1', '#847197'],
+  ['#cb95ac', '#a57389'],
+];
 
 export function sceneryLayout(width, height, ground, distance = 0, reduced = false, seed = 0) {
   const sand = height - ground;
   const beachItems = sand > 80 ? Array.from({ length: Math.min(18, Math.ceil(width / 100)) }, (_, i) => {
     const random = (salt) => fraction(seed + i * 17 + salt);
     const radius = 6 + random(3) * 4;
+    const [color, stroke] = beachPalette[Math.floor(random(41) * beachPalette.length)];
     return {
       kind: (i + Math.floor(random(5) * 2)) % 2 ? 'starfish' : 'shell',
       x: random(7) * width,
       y: ground + 48 + radius + random(11) * Math.max(0, sand - 64 - radius * 2),
-      radius, tilt: random(31) * Math.PI * 2, opacity: 0.12 + random(23) * 0.05,
+      radius, tilt: random(31) * Math.PI * 2, opacity: 0.32 + random(23) * 0.12, color, stroke,
     };
   }) : [];
   // 固定世界位置，相隔 1250 单位；只用行进距离投影，不在视口内循环瞬移。
@@ -239,8 +245,9 @@ export function drawSand(c, layout, width, distance, reduced) {
     const x = ((item.x - drift) % (width + 30) + width + 30) % (width + 30) - 15;
     c.save(); c.translate(x, item.y); c.rotate(item.tilt); c.scale(item.radius, item.radius);
     c.globalAlpha = item.opacity; c.lineWidth = 0.07;
+    c.fillStyle = item.color; c.strokeStyle = item.stroke;
     if (item.kind === 'starfish') {
-      c.fillStyle = '#bd927b'; c.strokeStyle = '#a7806d'; c.beginPath();
+      c.beginPath();
       for (let i = 0; i < 10; i++) {
         const angle = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 0.42 : 0.96;
         if (i === 0) c.moveTo(Math.cos(angle) * r, Math.sin(angle) * r);
@@ -252,7 +259,7 @@ export function drawSand(c, layout, width, distance, reduced) {
         c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a) * 0.65, Math.sin(a) * 0.65); c.stroke();
       }
     } else {
-      c.fillStyle = '#a79c8a'; c.strokeStyle = '#938e82'; c.beginPath();
+      c.beginPath();
       c.moveTo(-0.16, 0.65); c.lineTo(-0.83, -0.15);
       for (let i = 0; i < 5; i++) {
         const a = Math.PI + i * Math.PI / 5, b = Math.PI + (i + 1) * Math.PI / 5;

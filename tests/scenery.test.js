@@ -31,7 +31,10 @@ test('海星和贝壳使用独立种子随机分布，同一种子跨帧保持�
   assert.deepEqual(a.beachItems, sceneryLayout(1200, 720, 520, 0, false, 123).beachItems);
   assert.notDeepEqual(a.beachItems, b.beachItems);
   assert.deepEqual(new Set(a.beachItems.map((item) => item.kind)), new Set(['starfish', 'shell']));
-  assert.ok(a.beachItems.every((item) => item.opacity >= 0.12 && item.opacity <= 0.17));
+  assert.ok(a.beachItems.every((item) => item.opacity >= 0.32 && item.opacity <= 0.44));
+  assert.ok(new Set(a.beachItems.map((item) => item.color)).size >= 3);
+  assert.ok(a.beachItems.every((item) => /^#[0-9a-f]{6}$/.test(item.color) && /^#[0-9a-f]{6}$/.test(item.stroke)));
+  assert.deepEqual(a.beachItems, sceneryLayout(1200, 720, 520, 500, false, 123).beachItems);
   assert.deepEqual(a.palms, b.palms);
 });
 test('椰树始终以固定透明度绘制，不因玩家或障碍接近消失', () => {
