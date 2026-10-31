@@ -210,6 +210,11 @@ if (typeof ResizeObserver !== 'undefined') {
   helpObserver.observe(document.querySelector('.help-columns'));
 }
 let helpCloseTimer;
+let helpBackdropDown = false;
+function outsideHelp(event) {
+  const rect = $('help-dialog').getBoundingClientRect();
+  return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+}
 function finishHelpClose() {
   if ($('help-dialog').open && $('help-dialog').dataset.motion === 'closing') $('help-dialog').close();
 }
@@ -230,12 +235,21 @@ $('help').addEventListener('click', () => {
 });
 $('help-dialog').querySelector('form').addEventListener('submit', (event) => { event.preventDefault(); closeHelp(); });
 $('help-dialog').addEventListener('cancel', (event) => { event.preventDefault(); closeHelp(); });
+$('help-dialog').addEventListener('pointerdown', (event) => {
+  helpBackdropDown = event.button === 0 && event.target === $('help-dialog') && outsideHelp(event);
+});
+$('help-dialog').addEventListener('pointercancel', () => { helpBackdropDown = false; });
+$('help-dialog').addEventListener('click', (event) => {
+  if (helpBackdropDown && event.target === $('help-dialog') && outsideHelp(event)) closeHelp();
+  helpBackdropDown = false;
+});
 $('help-dialog').addEventListener('animationend', (event) => {
   if (event.target !== $('help-dialog')) return;
   if (event.animationName === 'help-out') finishHelpClose();
   else if (event.animationName === 'help-in' && $('help-dialog').dataset.motion === 'opening') delete $('help-dialog').dataset.motion;
 });
 $('help-dialog').addEventListener('close', () => {
+  helpBackdropDown = false;
   clearTimeout(helpCloseTimer); delete $('help-dialog').dataset.motion;
   clearInput();
   if (game.state === 'paused') $('continue').focus({ preventScroll: true });
