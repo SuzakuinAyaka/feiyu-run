@@ -11,6 +11,8 @@
   --retry-bg: #3c4043;
   --radius-control: 12px;
   --radius-panel: 20px;
+  --glass-fill: rgb(248 252 255 / 88%);
+  --glass-edge: rgb(255 255 255 / 80%);
   font-family: Arial, "Microsoft YaHei", "PingFang SC", sans-serif;
 }
 :root[data-theme="light"] {
@@ -74,7 +76,22 @@ body[data-state="over"] #score.new-record { animation: none; }
 #touch-controls { position: absolute; bottom: max(74px, calc(env(safe-area-inset-bottom) + 65px)); left: 24px; right: 24px; display: none; justify-content: space-between; pointer-events: none; }
 #touch-controls button { width: 80px; min-height: 72px; border-radius: var(--radius-panel); color: var(--ink); background: #cee4ef; font-size: 26px; touch-action: none; user-select: none; -webkit-user-select: none; pointer-events: auto; }
 #touch-controls span { display: block; font-size: 14px; margin-top: 3px; }
-dialog { width: min(520px, calc(100% - 36px)); max-height: calc(100svh - 48px); border: 0; border-radius: var(--radius-panel); padding: 28px; background: var(--paper); color: var(--ink); }
+/* 用足量浅色底托住文字；不支持背景模糊时回退为近不透明底色。 */
+dialog, #overlay, #touch-controls button, #retry-load {
+  background: #f5fafd;
+  color: var(--ink);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 10px 36px rgb(26 65 92 / 12%), inset 0 1px 0 rgb(255 255 255 / 65%);
+}
+#overlay { padding: 26px; border-radius: var(--radius-panel); }
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  dialog, #overlay, #touch-controls button, #retry-load {
+    background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(18px) saturate(115%);
+    backdrop-filter: blur(18px) saturate(115%);
+  }
+}
+dialog { width: min(520px, calc(100% - 36px)); max-height: calc(100svh - 48px); border-radius: var(--radius-panel); padding: 28px; }
 dialog::backdrop { background: rgb(0 0 0 / 55%); }
 dialog h2 { font-size: 24px; margin: 0 0 20px; }
 dialog p { font-size: 16px; line-height: 1.65; }
