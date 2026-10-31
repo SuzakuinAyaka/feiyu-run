@@ -5,12 +5,12 @@ import { messages, translate } from '../src/i18n.js';
 import { runPose } from '../src/animation.js';
 
 test('主题和语言默认明确，不依赖系统设置', () => {
-  assert.deepEqual(readPreferences({ getItem: () => null }), { theme: 'dark', locale: 'zh-CN' });
+  assert.deepEqual(readPreferences({ getItem: () => null }), { theme: 'dark', locale: 'zh-CN', touchButtons: 'on' });
 });
 test('有效偏好可恢复，非法值和存储异常回退默认值', () => {
-  assert.deepEqual(readPreferences({ getItem: (key) => key.endsWith('theme') ? 'light' : 'en' }), { theme: 'light', locale: 'en' });
-  assert.deepEqual(readPreferences({ getItem: () => 'system' }), { theme: 'dark', locale: 'zh-CN' });
-  assert.deepEqual(readPreferences({ getItem: () => { throw new Error('blocked'); } }), { theme: 'dark', locale: 'zh-CN' });
+  assert.deepEqual(readPreferences({ getItem: (key) => key.endsWith('theme') ? 'light' : 'en' }), { theme: 'light', locale: 'en', touchButtons: 'on' });
+  assert.deepEqual(readPreferences({ getItem: () => 'system' }), { theme: 'dark', locale: 'zh-CN', touchButtons: 'on' });
+  assert.deepEqual(readPreferences({ getItem: () => { throw new Error('blocked'); } }), { theme: 'dark', locale: 'zh-CN', touchButtons: 'on' });
 });
 test('只保存支持的偏好，存储被禁止不导致崩溃', () => {
   const saved = []; const storage = { setItem: (...args) => saved.push(args) };
@@ -18,6 +18,18 @@ test('只保存支持的偏好，存储被禁止不导致崩溃', () => {
   assert.deepEqual(saved, [['feiyu-run.theme', 'light']]);
   assert.equal(savePreference(storage, 'theme', 'system'), false);
   assert.equal(savePreference({ setItem() { throw new Error('blocked'); } }, 'locale', 'en'), false);
+});
+
+test('跳蹲按钮默认显示，可保存关闭选择，非法值及存储异常回退显示', () => {
+  const values = new Map();
+  const storage = { getItem: key => values.get(key), setItem: (key, value) => values.set(key, value) };
+  assert.equal(readPreferences(storage).touchButtons, 'on');
+  assert.equal(savePreference(storage, 'touchButtons', 'off'), true);
+  assert.equal(readPreferences(storage).touchButtons, 'off');
+  assert.equal(savePreference(storage, 'touchButtons', 'maybe'), false);
+  values.set('feiyu-run.touchButtons', 'invalid'); assert.equal(readPreferences(storage).touchButtons, 'on');
+  assert.equal(readPreferences({ getItem() { throw new Error('blocked'); } }).touchButtons, 'on');
+  assert.equal(savePreference(undefined, 'touchButtons', 'off'), false);
 });
 test('中英文文案键完整一致且插值保留分数', () => {
   assert.deepEqual(Object.keys(messages.en).sort(), Object.keys(messages['zh-CN']).sort());

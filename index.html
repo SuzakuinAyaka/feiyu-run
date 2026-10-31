@@ -84,6 +84,13 @@
     </section>
     <section aria-labelledby="mobile-controls-title">
       <h3 id="mobile-controls-title" data-i18n="mobileControls">移动端操作</h3>
+      <div id="touch-buttons-setting" hidden>
+        <label class="help-switch" for="toggle-touch-buttons">
+          <span data-i18n="showTouchButtons">显示跳跃 / 下蹲按钮</span>
+          <input id="toggle-touch-buttons" type="checkbox" role="switch" aria-describedby="touch-buttons-note" checked>
+        </label>
+        <p id="touch-buttons-note" class="help-detail" data-i18n="touchButtonsNote">关闭按钮后，仍可通过左右半屏操作。</p>
+      </div>
       <dl>
         <div><dt data-i18n="jump">跳跃</dt><dd data-i18n="mobileJumpHelp">点击右半区或跳跃小按钮，按住跳得更高</dd></div>
         <div><dt data-i18n="duck">下蹲</dt><dd data-i18n="mobileDuckHelp">按住左半区或下蹲小按钮，松开恢复</dd></div>

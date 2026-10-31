@@ -69,6 +69,8 @@ function updateUI() {
   const helpColumns = document.querySelector('.help-columns');
   const firstHelp = $(touchLayout.matches ? 'mobile-controls-title' : 'desktop-controls-title').parentElement;
   if (helpColumns.firstElementChild !== firstHelp) helpColumns.prepend(firstHelp);
+  $('touch-buttons-setting').hidden = !touchLayout.matches;
+  $('toggle-touch-buttons').checked = preferences.touchButtons === 'on';
   const arriving = game.entranceRemaining > 0 && state !== 'ready';
   document.body.classList.toggle('arriving', arriving);
   $('preferences').inert = arriving; $('utilities').inert = arriving;
@@ -85,7 +87,7 @@ function updateUI() {
   $('reset-score').hidden = state !== 'ready';
   $('reset-note').textContent = t('resetNote', { score: best });
   $('overlay').hidden = state !== 'paused' && state !== 'over';
-  $('touch-controls').hidden = state !== 'running';
+  $('touch-controls').hidden = state !== 'running' || preferences.touchButtons !== 'on';
   $('theme').hidden = state !== 'ready';
   $('theme').setAttribute('aria-label', t(preferences.theme === 'dark' ? 'switchLight' : 'switchDark'));
   $('theme').title = t(preferences.theme === 'dark' ? 'switchLight' : 'switchDark');
@@ -210,6 +212,12 @@ if (typeof ResizeObserver !== 'undefined') {
   helpObserver.observe(document.querySelector('.help-columns'));
 }
 let helpCloseTimer;
+$('toggle-touch-buttons').addEventListener('change', (event) => {
+  preferences.touchButtons = event.target.checked ? 'on' : 'off';
+  savePreference(storage, 'touchButtons', preferences.touchButtons);
+  clearInput(); updateUI();
+  requestAnimationFrame(updateHelpScroll);
+});
 let helpBackdropDown = false;
 function outsideHelp(event) {
   const rect = $('help-dialog').getBoundingClientRect();

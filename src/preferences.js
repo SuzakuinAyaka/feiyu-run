@@ -1,5 +1,5 @@
-const supported = { theme: ['dark', 'light'], locale: ['zh-CN', 'en'] };
-const defaults = { theme: 'dark', locale: 'zh-CN' };
+const supported = { theme: ['dark', 'light'], locale: ['zh-CN', 'en'], touchButtons: ['on', 'off'] };
+const defaults = { theme: 'dark', locale: 'zh-CN', touchButtons: 'on' };
 
 export function readPreferences(storage) {
   return Object.fromEntries(Object.keys(defaults).map((key) => {
