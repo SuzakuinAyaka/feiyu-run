@@ -130,6 +130,8 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
 .no-script { position: relative; max-width: 600px; margin: 32px auto; padding: 24px; font-size: 16px; }
 @media (pointer: coarse), (max-width: 700px) {
   #touch-controls { display: flex; }
+  #touch-controls button { width: 60px; min-height: 54px; font-size: 20px; }
+  #touch-controls span { font-size: 12px; margin-top: 2px; }
   #start-hint { font-size: 20px; }
   #entrance { padding-top: 18svh; }
   #scoreboard { top: 22%; gap: 18px; right: 20px; }
@@ -147,7 +149,7 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
 @media (max-height: 500px) and (orientation: landscape) {
   #entrance { padding-top: 15svh; }
   #touch-controls { bottom: 50px; }
-  #touch-controls button { min-height: 50px; width: 64px; font-size: 20px; }
+  #touch-controls button { min-height: 46px; width: 54px; font-size: 18px; }
   #touch-controls span { font-size: 12px; }
   #scoreboard { top: 12%; }
   #overlay { top: 20%; }

@@ -252,10 +252,18 @@ bindHold('jump', jumpPointers, jump, () => { if (!heldJumpKeys.size) game.releas
 bindHold('duck', duckPointers, () => game.duck(true), () => { if (!heldDuckKeys.size) game.duck(false); });
 $('scene').addEventListener('pointerdown', (event) => {
   if (!['running', 'entering'].includes(game.state) || event.button !== 0) return;
-  event.preventDefault(); $('scene').setPointerCapture(event.pointerId); jumpPointers.add(event.pointerId); jump();
+  event.preventDefault(); $('scene').setPointerCapture(event.pointerId);
+  const rect = $('scene').getBoundingClientRect();
+  if (touchLayout.matches && event.clientX < rect.left + rect.width / 2) {
+    duckPointers.add(event.pointerId); game.duck(true);
+  } else { jumpPointers.add(event.pointerId); jump(); }
 });
 for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-  $('scene').addEventListener(type, (event) => { jumpPointers.delete(event.pointerId); if (!jumpPointers.size && !heldJumpKeys.size) game.releaseJump(); });
+  $('scene').addEventListener(type, (event) => {
+    jumpPointers.delete(event.pointerId); duckPointers.delete(event.pointerId);
+    if (!jumpPointers.size && !heldJumpKeys.size) game.releaseJump();
+    if (!duckPointers.size && !heldDuckKeys.size) game.duck(false);
+  });
 }
 window.addEventListener('blur', pause);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
