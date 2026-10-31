@@ -66,6 +66,9 @@ function updateScore() {
 
 function updateUI() {
   const state = game.state;
+  const helpColumns = document.querySelector('.help-columns');
+  const firstHelp = $(touchLayout.matches ? 'mobile-controls-title' : 'desktop-controls-title').parentElement;
+  if (helpColumns.firstElementChild !== firstHelp) helpColumns.prepend(firstHelp);
   const arriving = game.entranceRemaining > 0 && state !== 'ready';
   document.body.classList.toggle('arriving', arriving);
   $('preferences').inert = arriving; $('utilities').inert = arriving;
