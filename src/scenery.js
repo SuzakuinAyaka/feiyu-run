@@ -62,7 +62,9 @@ export function orcaSplashes(time, width, ground, reduced = false) {
         y: y - Math.sin(phase * Math.PI) * (9 + i % 3 * 4) + phase * 2,
         radius: 1 + i % 2 * 0.4,
       }));
-      splashes.push({ kind, x, y, radius: 8 + phase * (landing ? 25 : 18), opacity: Math.sin(phase * Math.PI) * 0.32, drops });
+      const lift = Math.sin(phase * Math.PI);
+      const wave = { width: 14 + phase * (landing ? 34 : 26), height: Math.pow(lift, 0.7) * (landing ? 24 : 18), opacity: lift * 0.4 };
+      splashes.push({ kind, x, y, radius: 8 + phase * (landing ? 25 : 18), opacity: lift * 0.32, drops, wave });
     }
   }
   return splashes;
@@ -71,6 +73,23 @@ export function orcaSplashes(time, width, ground, reduced = false) {
 function drawOrcaSplashes(c, splashes) {
   c.save(); c.lineWidth = 1.2; c.lineCap = 'round';
   for (const splash of splashes) {
+    const { width: w, height: h, opacity } = splash.wave;
+    // 双侧卷起的半透明浪体和白色浪尖，随冲击向外展开、回落。
+    for (const direction of [-1, 1]) {
+      c.save(); c.translate(splash.x, splash.y); c.scale(direction, 1);
+      c.globalAlpha = opacity; c.fillStyle = '#78afc5';
+      c.beginPath(); c.moveTo(0, 1);
+      c.bezierCurveTo(w * 0.22, -h * 0.2, w * 0.35, -h, w * 0.72, -h);
+      c.quadraticCurveTo(w * 1.08, -h * 0.95, w * 0.94, -h * 0.55);
+      c.quadraticCurveTo(w * 0.72, -h * 0.82, w * 0.63, -h * 0.48);
+      c.quadraticCurveTo(w * 0.72, -h * 0.1, w, 1); c.closePath(); c.fill();
+      c.strokeStyle = '#f5ffff'; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(w * 0.35, -h * 0.72);
+      c.quadraticCurveTo(w * 0.5, -h, w * 0.72, -h);
+      c.quadraticCurveTo(w * 1.08, -h * 0.95, w * 0.94, -h * 0.55); c.stroke();
+      c.restore();
+    }
+    c.lineWidth = 1.2;
     c.globalAlpha = splash.opacity; c.strokeStyle = '#729eaf'; c.fillStyle = '#f5ffff';
     c.beginPath(); c.ellipse(splash.x, splash.y, splash.radius, 2.5, 0, 0, Math.PI * 2); c.stroke();
     c.beginPath(); c.ellipse(splash.x, splash.y + 1, splash.radius * 0.65, 1.5, 0, 0, Math.PI); c.stroke();

@@ -119,6 +119,21 @@ test('水花低透明度、只在远海，随时间扩散且减少动态效果�
     assert.deepEqual(orcaSplashes(52.3, width, 520)[0], a);
   }
 });
+
+test('出入水掀起双侧浪峰，入水浪更高，随后向外扩散并落回海面', () => {
+  const launch = orcaSplashes(52.65, 1200, 520)[0];
+  const landing = orcaSplashes(59.3, 1200, 520)[0];
+  assert.ok(launch.wave.height >= 18 && landing.wave.height >= 24);
+  const early = orcaSplashes(52.2, 1200, 520)[0], late = orcaSplashes(53.2, 1200, 520)[0];
+  assert.ok(late.wave.width > early.wave.width);
+  assert.ok(late.wave.height < launch.wave.height);
+  for (let time = 52; time < 60.1; time += 0.1) {
+    for (const splash of orcaSplashes(time, 1200, 520)) {
+      assert.ok(splash.wave.opacity >= 0 && splash.wave.opacity <= 0.4);
+      assert.ok(splash.y + 4 < 520 - 128 && splash.wave.height <= 24);
+    }
+  }
+});
 test('海鸥群的数量、速度与间隔由独立种子确定，跨帧匀速向左且不渐隐', () => {
   const a = skyFlocks(1200, 520, 20, 123), b = skyFlocks(1200, 520, 21, 123);
   assert.ok(a.length > 0);
