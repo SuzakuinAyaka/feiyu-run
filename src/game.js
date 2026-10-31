@@ -67,6 +67,7 @@ function updateUI() {
   const state = game.state;
   const arriving = game.entranceRemaining > 0 && state !== 'ready';
   document.body.classList.toggle('arriving', arriving);
+  $('preferences').inert = arriving; $('utilities').inert = arriving;
   document.body.dataset.state = state;
   $('entrance').hidden = state !== 'ready' && !arriving;
   $('entrance').inert = state !== 'ready';
@@ -80,7 +81,7 @@ function updateUI() {
   $('reset-score').hidden = state !== 'ready';
   $('reset-note').textContent = t('resetNote', { score: best });
   $('overlay').hidden = state !== 'paused' && state !== 'over';
-  $('touch-controls').hidden = state !== 'running';
+  $('touch-controls').hidden = !['running', 'entering'].includes(state);
   $('theme').hidden = state !== 'ready';
   $('theme').setAttribute('aria-label', t(preferences.theme === 'dark' ? 'switchLight' : 'switchDark'));
   $('theme').title = t(preferences.theme === 'dark' ? 'switchLight' : 'switchDark');
@@ -120,6 +121,7 @@ function begin() {
   if (!renderer || modalOpen() || !['ready', 'over'].includes(game.state)) return;
   const fromEntrance = game.state === 'ready';
   clearInput(); hideDeparture(); startingBest = best; game.start({ entrance: fromEntrance }); lastTime = 0;
+  document.body.classList.remove('hud-arrive');
   document.body.style.setProperty('--arrival-progress', '0');
   renderer.resetScenery();
   updateUI(); renderer.draw(game); $('scene').focus({ preventScroll: true });
@@ -174,6 +176,7 @@ $('retry-load').addEventListener('click', loadSprite);
 $('continue').addEventListener('click', activate);
 $('pause').addEventListener('click', () => game.state === 'paused' ? resume() : pause());
 $('home').addEventListener('click', () => {
+  document.body.classList.remove('hud-arrive');
   clearInput(); hideDeparture(); game.reset(); game.state = 'ready'; updateUI(); $('start').focus({ preventScroll: true });
 });
 $('sound').addEventListener('click', () => {
@@ -219,7 +222,7 @@ document.addEventListener('keydown', (event) => {
   if (code === 'Enter') { activate(); return; }
   if (jumpKeys.has(code)) {
     heldJumpKeys.add(code);
-    if (game.state !== 'running') { activate(); heldJumpKeys.add(code); }
+    if (!['running', 'entering'].includes(game.state)) { activate(); heldJumpKeys.add(code); }
     else jump();
   } else if (duckKeys.has(code)) { heldDuckKeys.add(code); game.duck(true); }
 });
@@ -248,7 +251,7 @@ function bindHold(id, pointers, down, up) {
 bindHold('jump', jumpPointers, jump, () => { if (!heldJumpKeys.size) game.releaseJump(); });
 bindHold('duck', duckPointers, () => game.duck(true), () => { if (!heldDuckKeys.size) game.duck(false); });
 $('scene').addEventListener('pointerdown', (event) => {
-  if (game.state !== 'running' || event.button !== 0) return;
+  if (!['running', 'entering'].includes(game.state) || event.button !== 0) return;
   event.preventDefault(); $('scene').setPointerCapture(event.pointerId); jumpPointers.add(event.pointerId); jump();
 });
 for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
@@ -270,7 +273,7 @@ function frame(time) {
     if (wasEntering) {
       const progress = 1 - game.entranceRemaining / 3;
       document.body.style.setProperty('--arrival-progress', String(progress * progress * (3 - 2 * progress)));
-      if (game.state === 'running') { clearInput(); showDeparture(); }
+      if (game.state === 'running') { document.body.classList.add('hud-arrive'); showDeparture(); }
     }
     renderer.draw(game);
     if (game.state !== previousState) updateUI();

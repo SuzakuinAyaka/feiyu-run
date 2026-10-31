@@ -10,15 +10,26 @@ test('待机不会计分，开始后自动前进', () => {
   g.start(); step(g, 1); assert.ok(g.distance > 300); assert.equal(g.state, 'running');
 });
 
-test('入口准备持续 3 秒，冻结计分、障碍与输入，随后才开始跑酷', () => {
+test('入口准备持续 3 秒，冻结计分和障碍，随后才开始正式跑酷', () => {
   const g = fresh(); g.start({ entrance: true });
-  assert.equal(g.state, 'entering'); assert.equal(g.jump(), false); g.duck(true);
+  assert.equal(g.state, 'entering');
   step(g, 2.9);
   assert.ok(g.entranceElapsed > 2.89 && g.entranceElapsed < 2.91);
   assert.equal(g.state, 'entering'); assert.equal(g.score, 0); assert.equal(g.time, 0);
   assert.equal(g.distance, 0); assert.deepEqual(g.obstacles, []); assert.equal(g.player.ducking, false);
   step(g, 0.1); assert.equal(g.state, 'running'); assert.equal(g.score, 0); assert.equal(g.entranceElapsed, 3);
   step(g, 0.2); assert.ok(g.distance > 0); assert.ok(g.time > 0);
+});
+
+test('入场期间可跳跃、下蹲和快速落地，跨越三秒边界保持动作', () => {
+  const g = fresh(); g.start({ entrance: true });
+  assert.equal(g.jump(), true); step(g, 0.2); assert.ok(g.player.y < -40);
+  assert.equal(g.jump(), false); g.duck(true); assert.ok(g.player.vy >= 300);
+  step(g, 0.3); assert.equal(g.player.y, 0); assert.equal(g.player.ducking, true);
+  assert.equal(g.jump(), false); g.duck(false);
+  step(g, 2.4); assert.equal(g.jump(), true); step(g, 0.1);
+  assert.equal(g.state, 'running'); assert.ok(g.player.y < 0); assert.equal(g.player.holding, true);
+  assert.equal(g.score, 0); assert.deepEqual(g.obstacles, []);
 });
 
 test('准备中暂停冻结剩余时间，主动继续后完成过渡；重开默认跳过准备', () => {

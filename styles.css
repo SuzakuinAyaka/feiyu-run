@@ -32,6 +32,10 @@ body.arriving #entrance {
   background: var(--entrance); color: var(--entrance-ink);
   opacity: calc(1 - var(--arrival-progress, 0)); pointer-events: none;
 }
+body.arriving #scoreboard, body.arriving #utilities, body.arriving #preferences { visibility: hidden; pointer-events: none; }
+body.arriving #touch-controls { z-index: 2; }
+body.hud-arrive #scoreboard, body.hud-arrive #utilities, body.hud-arrive #preferences { animation: hud-rise 500ms ease-out both; }
+@keyframes hud-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 #departure-message { position: fixed; top: 13svh; left: 50%; transform: translateX(-50%); margin: 0; max-width: calc(100% - 48px); width: max-content; text-align: center; color: var(--ink); font-size: 24px; line-height: 1.5; pointer-events: none; animation: departure-note 3400ms linear both; }
 @keyframes departure-note { 0% { opacity: 0; } 5%, 93% { opacity: 1; } 100% { opacity: 0; } }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; border-radius: var(--radius-control); }
@@ -115,6 +119,7 @@ dialog form button { padding: 12px 22px; background: var(--accent); color: var(-
   #departure-message { font-size: 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  body.hud-arrive #scoreboard, body.hud-arrive #utilities, body.hud-arrive #preferences { animation: none; }
   #score.new-record { animation: none; }
   body.arriving #entrance { opacity: 0; }
   #departure-message { animation: none; }

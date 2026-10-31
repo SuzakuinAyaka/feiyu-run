@@ -37,7 +37,7 @@ export class Runner {
   }
   resume() { if (this.state === 'paused') this.state = this.entranceRemaining > 0 ? 'entering' : 'running'; }
   jump() {
-    if (this.state !== 'running' || this.player.y < 0 || this.player.vy < 0 || this.player.ducking) return false;
+    if (!['running', 'entering'].includes(this.state) || this.player.y < 0 || this.player.vy < 0 || this.player.ducking) return false;
     this.player.vy = -590;
     this.player.holding = true;
     return true;
@@ -47,7 +47,7 @@ export class Runner {
     if (this.player.vy < -470) this.player.vy = -470;
   }
   duck(active) {
-    if (this.state !== 'running') return;
+    if (!['running', 'entering'].includes(this.state)) return;
     this.player.ducking = active;
     if (active && this.player.y < 0) {
       this.player.holding = false;
@@ -67,6 +67,10 @@ export class Runner {
 
   update(delta) {
     if (this.state === 'entering' && Number.isFinite(delta) && delta > 0) {
+      let remaining = Math.min(delta, this.entranceRemaining, 0.05);
+      while (remaining > 0) {
+        const dt = Math.min(remaining, 1 / 120); remaining -= dt; this.updatePlayer(dt);
+      }
       this.entranceRemaining = Math.max(0, this.entranceRemaining - delta);
       if (this.entranceRemaining < 1e-9) { this.entranceRemaining = 0; this.state = 'running'; }
       this.entranceElapsed = 3 - this.entranceRemaining;
@@ -80,17 +84,21 @@ export class Runner {
       this.time += dt;
       this.speed = Math.min(640, 330 + this.time * 3.3);
       this.distance += this.speed * dt;
-      const p = this.player;
-      if (p.y < 0 || p.vy < 0) {
-        p.vy += (p.holding && p.vy < 0 ? 1450 : 2050) * dt;
-        p.y += p.vy * dt;
-        if (p.y >= 0) { p.y = 0; p.vy = 0; p.holding = false; }
-      }
+      this.updatePlayer(dt);
       this.untilNext -= dt;
       if (this.untilNext <= 0) this.spawn();
       for (const obstacle of this.obstacles) obstacle.x -= this.speed * dt;
       this.obstacles = this.obstacles.filter((o) => o.x + o.w > -30);
-      if (this.obstacles.some((o) => overlaps(playerBox(p), o))) this.state = 'over';
+      if (this.obstacles.some((o) => overlaps(playerBox(this.player), o))) this.state = 'over';
+    }
+  }
+
+  updatePlayer(dt) {
+    const p = this.player;
+    if (p.y < 0 || p.vy < 0) {
+      p.vy += (p.holding && p.vy < 0 ? 1450 : 2050) * dt;
+      p.y += p.vy * dt;
+      if (p.y >= 0) { p.y = 0; p.vy = 0; p.holding = false; }
     }
   }
 
