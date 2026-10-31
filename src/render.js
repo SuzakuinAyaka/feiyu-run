@@ -101,12 +101,13 @@ export class Renderer {
     const distance = game.distance + (game.entranceElapsed || 0) * 330;
     c.clearRect(0, 0, w, h);
     c.fillStyle = '#eaf5fa'; c.fillRect(0, 0, w, h);
+    // 远景太阳先绘制，随后云层覆盖它的重叠部分。
+    const scenery = drawSea(c, w, h, ground, distance, game.time, this.reduced, this.scenerySeed);
     const drift = this.reduced ? 0 : distance * 0.045;
     [0.31, 0.65, 0.94].forEach((f, i) => {
       const x = ((w * f - drift * (0.7 + i * 0.2)) % (w + 180) + w + 180) % (w + 180) - 60;
       this.cloud(x, ground - 270 - (i % 2) * 55, 38 + i * 7);
     });
-    const scenery = drawSea(c, w, h, ground, distance, game.time, this.reduced, this.scenerySeed);
     // 先画完整椰树，随后绘制沙地、障碍与角色；重叠时由前景遮挡，不隐藏整棵树。
     drawPalms(c, scenery);
     c.fillStyle = '#f2eada'; c.fillRect(0, ground, w, h - ground);

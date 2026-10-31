@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { sceneryLayout, seaVisitor, drawPalms, seaWaves, skyFlocks, orcaSplashes } from '../src/scenery.js';
 import { Runner } from '../src/engine.js';
+import { Renderer } from '../src/render.js';
+
+test('背景先画太阳再画云朵，云层始终位于太阳上方', () => {
+  const fills = [];
+  const c = new Proxy({}, {
+    get: (target, key) => key in target ? target[key] : () => { if (key === 'fill') fills.push(target.fillStyle); },
+    set: (target, key, value) => { target[key] = value; return true; },
+  });
+  const r = Object.assign(Object.create(Renderer.prototype), { c, width: 1200, height: 720, ground: 520, reduced: false, scenerySeed: 123 });
+  r.draw({ state: 'running', time: 0, distance: 0, player: { y: 0, ducking: false }, obstacles: [] });
+  const sun = fills.indexOf('#f1dba4'), cloud = fills.indexOf('#fff');
+  assert.ok(sun >= 0 && cloud > sun, `太阳填充 ${sun} 必须先于云层 ${cloud}`);
+});
 
 test('沙滩小物位于跑道下方，椰树从沙地表面向上生长', () => {
   for (const [width, height] of [[1200, 720], [600, 1300], [900, 320]]) {
