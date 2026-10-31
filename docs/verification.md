@@ -1,5 +1,18 @@
 # 验证记录
 
+## 毛玻璃阴影与 CSS 降级（2026-10-31）
+
+工具栏/语言区新增轻阴影，恢复弹窗和操作底板的外侧阴影。将模糊及圆角裁剪移到独立 `::before` 背景层，外层阴影、焦点轮廓不再被 `clip-path` 裁掉。伪元素不响应指针，保留移动端无残影的裁剪边界和动画结束后无变换行为。
+
+兼容策略：默认先绘制清晰近不透明底色；仅同时支持模糊（含 WebKit 前缀）及圆角裁剪时启用毛玻璃。增加 `vh` 到 `svh` 的顺序回退，`color-mix` 前补普通文字色。减少透明偏好使用纯色无模糊，高对比模式使用系统 `Canvas`/`CanvasText`、显式边框并关闭阴影/装饰背景层。
+
+- `npm run check`、`npm run build` 和 Diff 空白检查通过。纯 CSS 调整未重复执行物理测试。
+- Chromium 1440×900、375×844、844×390、2 倍像素比通过：外层阴影存在且未被裁剪，背景伪元素有模糊与圆角，动画结束无变换、无横向溢出或运行时异常。已查看手机暂停截图，阴影和面板边界正常。
+- DevTools 模拟减少透明、高对比模式通过；删除特性增强块模拟不满足 `@supports` 的路径，验证回退底色可见。后者是样式降级路径测试，不冒充旧浏览器实测。截图在 `test-results/glass-compat/`。未推送或发布。
+- 实际运行仅覆盖本机 Chromium；没有本机 Safari/Firefox 引擎，未声称完成这两个浏览器实测，也不承诺不支持 ES modules/原生 dialog 的古老浏览器可完整运行。
+
+官方兼容性参考：[MDN backdrop-filter](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/backdrop-filter)、[减少透明偏好](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/%40media/prefers-reduced-transparency)、[高对比模式](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/%40media/forced-colors)。
+
 ## 手机半屏操作与小按钮（2026-10-31）
 
 触屏布局下，游戏画面左半区按住下蹲、右半区起跳并支持按住跳高；按下时锁定动作，跨区拖动不会切换动作，松开、取消或丢失捕获会清理对应指针。沿用指针集合与键盘集合，支持多个输入来源；设置按钮不经过画面输入监听。保留跳蹲按钮并缩至 60×54px，短横屏为 54×46px。更新中英文帮助、开玩播报、画面 aria 和 README。

@@ -25,7 +25,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--entrance); color: var(--entrance-ink); }
 body:not([data-state="ready"]) { background: var(--sky); color: var(--ink); color-scheme: light; }
-body.arriving { color: color-mix(in srgb, var(--ink) calc(var(--arrival-progress, 0) * 100%), var(--entrance-ink)); }
+body.arriving { color: var(--ink); color: color-mix(in srgb, var(--ink) calc(var(--arrival-progress, 0) * 100%), var(--entrance-ink)); }
 body.arriving #entrance {
   position: fixed; inset: 0; z-index: 1; width: 100%; margin: 0;
   padding-inline: max(24px, calc((100% - 600px) / 2));
@@ -45,7 +45,7 @@ button:hover { color: var(--focus); }
 button:active { opacity: 0.7; }
 [hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-#game { min-height: 100svh; }
+#game { min-height: 100vh; min-height: 100svh; }
 #entrance { width: min(600px, calc(100% - 48px)); margin: 0 auto; padding-top: clamp(90px, 18vh, 220px); }
 #start { display: block; width: 56px; height: 64px; padding: 0; background: transparent; }
 #pixel-avatar { width: 48px; height: 56px; image-rendering: pixelated; }
@@ -78,16 +78,13 @@ body:not([data-state="ready"]) #utilities, body:not([data-state="ready"]) #prefe
   padding: 4px 10px;
   border: 1px solid rgb(255 255 255 / 55%);
   border-radius: var(--radius-control);
-  clip-path: inset(0 round var(--radius-control));
+  isolation: isolate;
+  --surface-fill: rgb(255 255 255 / 46%);
+  --surface-blur: 12px;
+  background: #f5fafd;
   background: rgb(255 255 255 / 90%);
+  box-shadow: 0 4px 16px rgb(26 65 92 / 12%), inset 0 1px 0 rgb(255 255 255 / 70%);
   color: var(--ink);
-}
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  body:not([data-state="ready"]) #utilities, body:not([data-state="ready"]) #preferences {
-    background: rgb(255 255 255 / 46%);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-  }
 }
 body:not([data-state="ready"]) #utilities button:hover, body:not([data-state="ready"]) #preferences button:hover { color: var(--accent); }
 #preferences #theme { display: grid; place-items: center; width: 40px; height: 40px; padding: 8px; }
@@ -99,21 +96,32 @@ body:not([data-state="ready"]) #utilities button:hover, body:not([data-state="re
 #touch-controls span { display: block; font-size: 14px; margin-top: 3px; }
 /* 用足量浅色底托住文字；不支持背景模糊时回退为近不透明底色。 */
 dialog, #overlay, #touch-controls button, #retry-load {
-  clip-path: inset(0 round var(--radius-panel));
+  isolation: isolate;
+  --surface-fill: var(--glass-fill);
+  --surface-blur: 18px;
   background: #f5fafd;
   color: var(--ink);
   border: 1px solid var(--glass-edge);
   box-shadow: 0 10px 36px rgb(26 65 92 / 12%), inset 0 1px 0 rgb(255 255 255 / 65%);
 }
 #overlay { padding: 26px; border-radius: var(--radius-panel); }
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  dialog, #overlay, #touch-controls button, #retry-load {
-    background: var(--glass-fill);
-    -webkit-backdrop-filter: blur(18px) saturate(115%);
-    backdrop-filter: blur(18px) saturate(115%);
+#touch-controls button, #retry-load { position: relative; }
+/* 仅背景伪元素做圆角裁剪，外层阴影与键盘焦点轮廓不被裁掉。 */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) and (clip-path: inset(0 round 1px)) {
+  dialog, #overlay, #touch-controls button, #retry-load,
+  body:not([data-state="ready"]) #utilities, body:not([data-state="ready"]) #preferences { background: transparent; }
+  dialog::before, #overlay::before, #touch-controls button::before, #retry-load::before,
+  body:not([data-state="ready"]) #utilities::before, body:not([data-state="ready"]) #preferences::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    border-radius: inherit; clip-path: inset(0 round var(--radius-panel));
+    background: var(--surface-fill);
+    -webkit-backdrop-filter: blur(var(--surface-blur));
+    backdrop-filter: blur(var(--surface-blur));
   }
+  body:not([data-state="ready"]) #utilities::before, body:not([data-state="ready"]) #preferences::before,
+  #retry-load::before { clip-path: inset(0 round var(--radius-control)); }
 }
-dialog { width: min(520px, calc(100% - 36px)); max-height: calc(100svh - 48px); border-radius: var(--radius-panel); padding: 28px; }
+dialog { width: min(520px, calc(100% - 36px)); max-height: calc(100vh - 48px); max-height: calc(100svh - 48px); border-radius: var(--radius-panel); padding: 28px; }
 dialog::backdrop { background: rgb(0 0 0 / 55%); }
 dialog h2 { font-size: 24px; margin: 0 0 20px; }
 dialog p { font-size: 16px; line-height: 1.65; }
@@ -133,7 +141,7 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
   #touch-controls button { width: 60px; min-height: 54px; font-size: 20px; }
   #touch-controls span { font-size: 12px; margin-top: 2px; }
   #start-hint { font-size: 20px; }
-  #entrance { padding-top: 18svh; }
+  #entrance { padding-top: 18vh; padding-top: 18svh; }
   #scoreboard { top: 22%; gap: 18px; right: 20px; }
   #utilities { right: 20px; left: 20px; justify-content: center; }
   #preferences { right: 20px; }
@@ -146,8 +154,22 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
   body.arriving #entrance { opacity: 0; }
   #departure-message { animation: none; }
 }
+@media (prefers-reduced-transparency: reduce) {
+  dialog::before, #overlay::before, #touch-controls button::before, #retry-load::before,
+  body:not([data-state="ready"]) #utilities::before, body:not([data-state="ready"]) #preferences::before {
+    background: #f5fafd; -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+}
+@media (forced-colors: active) {
+  dialog, #overlay, #touch-controls button, #retry-load,
+  body:not([data-state="ready"]) #utilities, body:not([data-state="ready"]) #preferences {
+    background: Canvas; color: CanvasText; border: 1px solid CanvasText; box-shadow: none;
+  }
+  dialog::before, #overlay::before, #touch-controls button::before, #retry-load::before,
+  body:not([data-state="ready"]) #utilities::before, body:not([data-state="ready"]) #preferences::before { content: none; }
+}
 @media (max-height: 500px) and (orientation: landscape) {
-  #entrance { padding-top: 15svh; }
+  #entrance { padding-top: 15vh; padding-top: 15svh; }
   #touch-controls { bottom: 50px; }
   #touch-controls button { min-height: 46px; width: 54px; font-size: 18px; }
   #touch-controls span { font-size: 12px; }
