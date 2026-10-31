@@ -49,34 +49,35 @@ export function seaVisitor(time, width, ground, reduced = false) {
   };
 }
 
-export function orcaSplashes(time, width, ground, reduced = false) {
+export function seaSplashes(time, width, ground, reduced = false) {
   if (reduced || time < 18) return [];
   const cycleTime = (time - 18) % 68;
   const drift = Math.min(120, width * 0.1);
   const splashes = [];
-  for (const start of [34, 56]) {
+  for (const start of [0, 34, 56]) {
+    const dolphin = start === 0, scale = dolphin ? 0.62 : 1;
     for (const kind of ['launch', 'landing']) {
       const landing = kind === 'landing';
-      const elapsed = cycleTime - start - (landing ? 6.55 : 0);
+      const elapsed = cycleTime - start - (landing ? dolphin ? 5.55 : 6.55 : 0);
       const duration = landing ? 1.5 : 1.3;
       if (elapsed < 0 || elapsed >= duration) continue;
       const phase = elapsed / duration;
-      // 水花锚定出入水点，不跟着空中的虎鲸移动；余波独立于动物的显示时长。
+      // 水花锚定出入水点，不跟着空中的动物移动；余波独立于动物的显示时长。
       const x = Math.max(290, width * 0.54) + (landing ? drift : 0), y = ground - 156;
-      const drops = Array.from({ length: landing ? 8 : 6 }, (_, i) => ({
-        x: x + (i % 2 ? 1 : -1) * (3 + (12 + Math.floor(i / 2) * 4) * phase),
-        y: y - Math.sin(phase * Math.PI) * (9 + i % 3 * 4) + phase * 2,
-        radius: 1 + i % 2 * 0.4,
+      const drops = Array.from({ length: (landing ? 8 : 6) - (dolphin ? 2 : 0) }, (_, i) => ({
+        x: x + (i % 2 ? 1 : -1) * (3 + (12 + Math.floor(i / 2) * 4) * phase) * scale,
+        y: y - Math.sin(phase * Math.PI) * (9 + i % 3 * 4) * scale + phase * 2,
+        radius: (1 + i % 2 * 0.4) * (dolphin ? 0.8 : 1),
       }));
       const lift = Math.sin(phase * Math.PI);
-      const wave = { width: 14 + phase * (landing ? 34 : 26), height: Math.pow(lift, 0.7) * (landing ? 24 : 18), opacity: lift * 0.4 };
-      splashes.push({ kind, x, y, radius: 8 + phase * (landing ? 25 : 18), opacity: lift * 0.32, drops, wave });
+      const wave = { width: (14 + phase * (landing ? 34 : 26)) * scale, height: Math.pow(lift, 0.7) * (landing ? 24 : 18) * scale, opacity: lift * (dolphin ? 0.34 : 0.4) };
+      splashes.push({ kind, animal: dolphin ? 'dolphin' : 'orca', x, y, radius: (8 + phase * (landing ? 25 : 18)) * scale, opacity: lift * 0.32, drops, wave });
     }
   }
   return splashes;
 }
 
-function drawOrcaSplashes(c, splashes) {
+function drawSeaSplashes(c, splashes) {
   c.save(); c.lineWidth = 1.2; c.lineCap = 'round';
   for (const splash of splashes) {
     const { width: w, height: h, opacity } = splash.wave;
@@ -233,7 +234,7 @@ export function drawSea(c, width, height, ground, distance, time, reduced, seed 
   c.globalAlpha = 1;
   const animal = seaVisitor(time, width, ground, reduced);
   if (animal) visitor(c, animal);
-  drawOrcaSplashes(c, orcaSplashes(time, width, ground, reduced));
+  drawSeaSplashes(c, seaSplashes(time, width, ground, reduced));
   c.restore();
   return layout;
 }

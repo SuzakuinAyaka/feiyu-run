@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sceneryLayout, seaVisitor, drawPalms, seaWaves, skyFlocks, orcaSplashes } from '../src/scenery.js';
+import { sceneryLayout, seaVisitor, drawPalms, seaWaves, skyFlocks, seaSplashes } from '../src/scenery.js';
 import { Runner } from '../src/engine.js';
 import { Renderer } from '../src/render.js';
 
@@ -107,47 +107,65 @@ test('每 68 秒保留一次海豚，虎鲸增加为两次且保持低透明度�
 
 test('虎鲸出水与入水各触发一次水花，入水余波在虎鲸消失后继续消散', () => {
   for (const start of [52, 74, 120, 142]) {
-    assert.equal(orcaSplashes(start - 0.1, 1200, 520).length, 0);
-    const launch = orcaSplashes(start + 0.4, 1200, 520);
-    const landing = orcaSplashes(start + 7.1, 1200, 520);
+    assert.equal(seaSplashes(start - 0.1, 1200, 520).length, 0);
+    const launch = seaSplashes(start + 0.4, 1200, 520);
+    const landing = seaSplashes(start + 7.1, 1200, 520);
     assert.equal(launch.length, 1); assert.equal(launch[0].kind, 'launch');
     assert.equal(landing.length, 1); assert.equal(landing[0].kind, 'landing');
     assert.ok(landing[0].x > launch[0].x);
     assert.equal(seaVisitor(start + 7.1, 1200, 520), null);
-    assert.deepEqual(orcaSplashes(start + 3, 1200, 520), []);
-    assert.deepEqual(orcaSplashes(start + 8.1, 1200, 520), []);
+    assert.deepEqual(seaSplashes(start + 3, 1200, 520), []);
+    assert.deepEqual(seaSplashes(start + 8.1, 1200, 520), []);
   }
-  assert.deepEqual(orcaSplashes(18.4, 1200, 520), []);
+
 });
 
 test('水花低透明度、只在远海，随时间扩散且减少动态效果时不绘制', () => {
   for (const width of [600, 1200]) {
-    const a = orcaSplashes(52.3, width, 520)[0], b = orcaSplashes(52.6, width, 520)[0];
+    const a = seaSplashes(52.3, width, 520)[0], b = seaSplashes(52.6, width, 520)[0];
     assert.equal(a.x, b.x); assert.ok(b.radius > a.radius);
     for (let time = 52; time < 60.1; time += 0.1) {
-      for (const splash of orcaSplashes(time, width, 520)) {
+      for (const splash of seaSplashes(time, width, 520)) {
         assert.ok(splash.opacity >= 0 && splash.opacity <= 0.32);
         assert.ok(splash.y + 4 < 520 - 128);
         assert.ok(splash.drops.every((drop) => drop.y + drop.radius < 520 - 128));
       }
-      assert.deepEqual(orcaSplashes(time, width, 520, true), []);
+      assert.deepEqual(seaSplashes(time, width, 520, true), []);
     }
-    assert.deepEqual(orcaSplashes(52.3, width, 520)[0], a);
+    assert.deepEqual(seaSplashes(52.3, width, 520)[0], a);
   }
 });
 
 test('出入水掀起双侧浪峰，入水浪更高，随后向外扩散并落回海面', () => {
-  const launch = orcaSplashes(52.65, 1200, 520)[0];
-  const landing = orcaSplashes(59.3, 1200, 520)[0];
+  const launch = seaSplashes(52.65, 1200, 520)[0];
+  const landing = seaSplashes(59.3, 1200, 520)[0];
   assert.ok(launch.wave.height >= 18 && landing.wave.height >= 24);
-  const early = orcaSplashes(52.2, 1200, 520)[0], late = orcaSplashes(53.2, 1200, 520)[0];
+  const early = seaSplashes(52.2, 1200, 520)[0], late = seaSplashes(53.2, 1200, 520)[0];
   assert.ok(late.wave.width > early.wave.width);
   assert.ok(late.wave.height < launch.wave.height);
   for (let time = 52; time < 60.1; time += 0.1) {
-    for (const splash of orcaSplashes(time, 1200, 520)) {
+    for (const splash of seaSplashes(time, 1200, 520)) {
       assert.ok(splash.wave.opacity >= 0 && splash.wave.opacity <= 0.4);
       assert.ok(splash.y + 4 < 520 - 128 && splash.wave.height <= 24);
     }
+  }
+});
+
+test('海豚也有出入水卷浪，尺寸与水滴少于虎鲸，余波独立消散', () => {
+  for (const offset of [0, 68]) {
+    for (const [dolphinTime, orcaTime, kind] of [[18.65, 52.65, 'launch'], [24.3, 59.3, 'landing']]) {
+      const dolphin = seaSplashes(dolphinTime + offset, 1200, 520)[0];
+      const orca = seaSplashes(orcaTime + offset, 1200, 520)[0];
+      assert.equal(dolphin.animal, 'dolphin'); assert.equal(dolphin.kind, kind);
+      assert.ok(dolphin.wave.height < orca.wave.height * 0.7);
+      assert.ok(dolphin.wave.width < orca.wave.width * 0.7);
+      assert.ok(dolphin.drops.length < orca.drops.length);
+      assert.ok(dolphin.radius < orca.radius);
+    }
+    assert.equal(seaVisitor(24.3 + offset, 1200, 520), null);
+    assert.deepEqual(seaSplashes(21 + offset, 1200, 520), []);
+    assert.deepEqual(seaSplashes(25.1 + offset, 1200, 520), []);
+    assert.deepEqual(seaSplashes(18.65 + offset, 1200, 520, true), []);
   }
 });
 test('海鸥群的数量、速度与间隔由独立种子确定，跨帧匀速向左且不渐隐', () => {
