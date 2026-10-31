@@ -105,8 +105,10 @@ dialog dd { margin: 0; line-height: 1.5; }
 dialog .credit { font-size: 13px; color: var(--muted); }
 dialog form { text-align: right; }
 dialog form button { padding: 12px 22px; background: var(--accent); color: var(--paper); }
+dialog form button:hover { background: var(--ink); color: var(--paper); }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
 .dialog-actions button[value="cancel"] { color: var(--ink); background: #e6eef4; }
+.dialog-actions button[value="cancel"]:hover { color: var(--ink); background: #d6e5ef; }
 .no-script { position: relative; max-width: 600px; margin: 32px auto; padding: 24px; font-size: 16px; }
 @media (pointer: coarse), (max-width: 700px) {
   #touch-controls { display: flex; }
