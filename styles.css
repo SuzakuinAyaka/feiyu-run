@@ -132,7 +132,32 @@ dialog, #overlay, #touch-controls button, #retry-load {
 dialog { width: min(520px, calc(100% - 36px)); max-height: calc(100vh - 48px); max-height: calc(100svh - 48px); border-radius: var(--radius-panel); padding: 28px; }
 dialog::backdrop { background: rgb(0 0 0 / 55%); }
 dialog h2 { font-size: 24px; margin: 0 0 20px; }
-#help-dialog { width: min(800px, calc(100% - 36px)); }
+#help-dialog {
+  width: min(800px, calc(100% - 36px));
+  height: min(720px, calc(100vh - 48px)); height: min(720px, calc(100svh - 48px));
+  overflow: hidden;
+}
+#help-dialog[open] { display: flex; flex-direction: column; }
+#help-dialog > h2 { flex: 0 0 auto; margin-bottom: 12px; }
+#help-dialog > form { flex: 0 0 auto; margin: 0; padding-top: 16px; }
+.help-reading { position: relative; flex: 1 1 auto; min-height: 0; }
+#help-scroll {
+  height: 100%; overflow-y: auto; overflow-x: hidden;
+  padding: 24px 8px 32px 4px; scroll-padding-block: 28px;
+  overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; scrollbar-gutter: stable;
+}
+#help-scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: 8px; }
+/* 不支持透明度蒙版时保留原生滚动，不叠加与毛玻璃异色的渐变条。 */
+@supports ((mask-image: linear-gradient(#000, transparent)) or (-webkit-mask-image: linear-gradient(#000, transparent))) {
+  .help-reading { --fade-top: 0px; --fade-bottom: 0px; }
+  .help-reading.can-scroll-up { --fade-top: 24px; }
+  .help-reading.can-scroll-down { --fade-bottom: 24px; }
+  #help-scroll {
+    --reading-mask: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
+    -webkit-mask-image: var(--reading-mask); mask-image: var(--reading-mask);
+  }
+}
 .help-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
 .help-columns section { min-width: 0; }
 .help-columns h3 { margin: 12px 0 18px; font-size: 18px; }
@@ -185,6 +210,7 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
   }
 }
 @media (forced-colors: active) {
+  #help-scroll { -webkit-mask-image: none; mask-image: none; }
   dialog, #overlay, #touch-controls button, #retry-load,
   body:not([data-state="ready"]) #utilities, body:not([data-state="ready"]) #preferences {
     background: Canvas; color: CanvasText; border: 1px solid CanvasText; box-shadow: none;

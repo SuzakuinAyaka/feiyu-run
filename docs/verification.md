@@ -1,5 +1,17 @@
 # 验证记录
 
+## 帮助正文独立滚动与自然渐变（2026-10-31）
+
+帮助弹窗固定标题和底部确认区，仅正文容器滚动。正文顶部 24px、底部 32px 留白，滚动定位留 28px 安全距离；容器可键盘聚焦，采用原生惯性滚动和滚动链隔离。未到底时下方文字渐隐，滚离顶部后上方渐隐，到达边缘撤去对应渐变；确认按钮不在滚动区域内，始终显示。
+
+按用户纠正，移除固定浅色渐变叠层，改用透明度蒙版露出原有毛玻璃底色。标准与 WebKit 蒙版同时提供，并通过特性检测增强；不支持时直接保留原生滚动条，不显示异色遮罩。高对比模式关闭蒙版。视口高度保留 `vh` 回退；`scrollbar-gutter` 等非必要增强不影响滚动。`ResizeObserver` 可用时监听布局变化，不可用时仍在打开、滚动、窗口变化及语言更新后刷新状态。
+
+- 浏览器回归先因缺少独立滚动容器失败，实现后 Chromium 375×844、844×390、1440×900 的中英文六组通过：顶部/中部/底部渐变状态正确、正文安全内边距、确认区全程可见且可关闭，弹窗本身不滚动且无横向溢出，无运行时异常。
+- 375px 场景禁用 `ResizeObserver` 后仍通过全部滚动检查；移除蒙版增强规则模拟不支持蒙版，验证标准/WebKit 蒙版均为 none、原生滚动保留、无渐变伪元素且确认可见。此为能力缺失路径模拟，不冒充旧版 Safari/Firefox 实机测试。
+- 已查看手机中部和底部截图，文字自然融入底色，无白色色带。证据在 `test-results/help-scroll/`。静态检查、构建、Diff 空白检查通过；未推送或发布。
+
+兼容资料：[MDN mask-image](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/mask-image)、[scrollbar-gutter](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/scrollbar-gutter)、[ResizeObserver](https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver)。
+
 ## 碰撞轻震动（2026-10-31）
 
 进入碰撞结束状态时，游戏 Canvas 播放一次 240ms、最大水平偏移 3px 的衰减震动。分数、操作栏和结束面板保持稳定，动画不保留最终变换；重开后可在下一次碰撞重新触发。减少动态效果偏好下关闭。仅增加 CSS，不改变碰撞、计分或输入。

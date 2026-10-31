@@ -31,6 +31,7 @@ function refreshPreferences() {
   document.documentElement.lang = preferences.locale;
   document.title = t('pageTitle');
   applyTranslations(document, preferences.locale);
+  if ($('help-dialog').open) requestAnimationFrame(updateHelpScroll);
   drawPixelAvatar($('pixel-avatar'), preferences.theme);
   updateUI();
 }
@@ -194,7 +195,21 @@ $('language').addEventListener('click', () => {
   announce(key, { score: game.score });
   if (game.state === 'running') $('scene').focus({ preventScroll: true });
 });
-$('help').addEventListener('click', () => { pause(); $('help-dialog').showModal(); });
+function updateHelpScroll() {
+  const scroll = $('help-scroll'), frame = scroll.parentElement;
+  frame.classList.toggle('can-scroll-up', scroll.scrollTop > 1);
+  frame.classList.toggle('can-scroll-down', scroll.scrollHeight - scroll.clientHeight - scroll.scrollTop > 2);
+}
+$('help-scroll').addEventListener('scroll', updateHelpScroll, { passive: true });
+if (typeof ResizeObserver !== 'undefined') {
+  const helpObserver = new ResizeObserver(updateHelpScroll);
+  helpObserver.observe($('help-scroll'));
+  helpObserver.observe(document.querySelector('.help-columns'));
+}
+$('help').addEventListener('click', () => {
+  pause(); $('help-dialog').showModal(); $('help-scroll').scrollTop = 0;
+  requestAnimationFrame(updateHelpScroll);
+});
 $('help-dialog').addEventListener('close', () => {
   clearInput();
   if (game.state === 'paused') $('continue').focus({ preventScroll: true });
@@ -269,6 +284,7 @@ window.addEventListener('blur', pause);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 window.addEventListener('pagehide', pause);
 window.addEventListener('resize', () => {
+  if ($('help-dialog').open) requestAnimationFrame(updateHelpScroll);
   if (renderer) { pause(); renderer.resize(); game.resize(renderer.width); renderer.draw(game); }
 });
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (event) => { if (renderer) renderer.reduced = event.matches; });
