@@ -212,7 +212,7 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
   #touch-controls span { font-size: 12px; margin-top: 2px; }
   #start-hint { font-size: 20px; }
   #entrance { padding-top: 18vh; padding-top: 18svh; }
-  #scoreboard { top: 22%; gap: 18px; right: 20px; }
+  #scoreboard { top: 22%; flex-direction: column; align-items: flex-end; gap: 8px; right: 20px; }
   #utilities { right: 20px; left: 20px; justify-content: center; }
   #preferences { right: 20px; }
   /* 小型语言底板使用半透明白底，避免移动端滤镜合成产生直角色块。 */
