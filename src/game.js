@@ -85,7 +85,7 @@ function updateUI() {
   $('reset-score').hidden = state !== 'ready';
   $('reset-note').textContent = t('resetNote', { score: best });
   $('overlay').hidden = state !== 'paused' && state !== 'over';
-  $('touch-controls').hidden = !['running', 'entering'].includes(state);
+  $('touch-controls').hidden = state !== 'running';
   $('theme').hidden = state !== 'ready';
   $('theme').setAttribute('aria-label', t(preferences.theme === 'dark' ? 'switchLight' : 'switchDark'));
   $('theme').title = t(preferences.theme === 'dark' ? 'switchLight' : 'switchDark');

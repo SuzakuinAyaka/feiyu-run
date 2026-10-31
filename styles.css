@@ -34,7 +34,8 @@ body.arriving #entrance {
 }
 body.arriving #scoreboard, body.arriving #utilities, body.arriving #preferences { visibility: hidden; pointer-events: none; }
 body.arriving #touch-controls { z-index: 2; }
-body.hud-arrive #scoreboard, body.hud-arrive #utilities, body.hud-arrive #preferences { animation: hud-rise 500ms ease-out backwards; }
+body.hud-arrive #scoreboard, body.hud-arrive #utilities, body.hud-arrive #preferences,
+body.hud-arrive #touch-controls { animation: hud-rise 500ms ease-out backwards; }
 @keyframes hud-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 #departure-message { position: fixed; top: 13svh; left: 50%; transform: translateX(-50%); margin: 0; max-width: calc(100% - 48px); width: max-content; text-align: center; color: var(--ink); font-size: 24px; line-height: 1.5; pointer-events: none; animation: departure-note 3400ms linear both; }
 @keyframes departure-note { 0% { opacity: 0; } 5%, 93% { opacity: 1; } 100% { opacity: 0; } }
@@ -217,7 +218,8 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
 @media (prefers-reduced-motion: reduce) {
   #help-dialog[data-motion], #help-dialog[data-motion]::backdrop { animation: none; }
   body[data-state="over"] #scene { animation: none; }
-  body.hud-arrive #scoreboard, body.hud-arrive #utilities, body.hud-arrive #preferences { animation: none; }
+  body.hud-arrive #scoreboard, body.hud-arrive #utilities, body.hud-arrive #preferences,
+  body.hud-arrive #touch-controls { animation: none; }
   #score.new-record { animation: none; }
   body.arriving #entrance { opacity: 0; }
   #departure-message { animation: none; }
