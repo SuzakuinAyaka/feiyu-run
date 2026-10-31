@@ -70,13 +70,28 @@
   <dialog id="help-dialog" aria-labelledby="help-title">
     <h2 id="help-title" data-i18n="title">大肥鱼快跑</h2>
     <p data-i18n="howTo">沿着海岸线，跳过礁石和漂流木，下蹲躲过海鸥。跑得越远，速度越快。</p>
-    <dl>
+    <div class="help-columns">
+    <section aria-labelledby="desktop-controls-title">
+      <h3 id="desktop-controls-title" data-i18n="desktopControls">桌面操作</h3>
+      <dl>
       <div><dt data-i18n="jump">跳跃</dt><dd data-i18n="jumpHelp">空格 / ↑ / W，按住跳得更高</dd></div>
       <div><dt data-i18n="duck">下蹲</dt><dd data-i18n="duckHelp">按住 ↓ / S，空中按下快速落地</dd></div>
       <div><dt data-i18n="pause">暂停</dt><dd data-i18n="pauseHelp">P / Escape；离开页面自动暂停</dd></div>
       <div><dt data-i18n="restart">重开</dt><dd data-i18n="restartHelp">结束后按空格 / Enter，或点按重开</dd></div>
-    </dl>
-    <p data-i18n="phoneHelp">手机操作：按住画面左半区下蹲，松开恢复；点击右半区起跳，按住跳得更高。也可使用下方的小型跳跃、下蹲按钮。</p>
+      </dl>
+    </section>
+    <section aria-labelledby="mobile-controls-title">
+      <h3 id="mobile-controls-title" data-i18n="mobileControls">移动端操作</h3>
+      <dl>
+        <div><dt data-i18n="jump">跳跃</dt><dd data-i18n="mobileJumpHelp">点击右半区或跳跃小按钮，按住跳得更高</dd></div>
+        <div><dt data-i18n="duck">下蹲</dt><dd data-i18n="mobileDuckHelp">按住左半区或下蹲小按钮，松开恢复</dd></div>
+        <div><dt data-i18n="pause">暂停</dt><dd data-i18n="mobilePauseHelp">点击底部暂停 / 继续；离开页面自动暂停</dd></div>
+        <div><dt data-i18n="restart">重开</dt><dd data-i18n="mobileRestartHelp">结束后点击「再跑一次」</dd></div>
+      </dl>
+      <p class="help-detail" data-i18n="mobileSettingsHelp">底部设置栏不触发跳跃或下蹲。</p>
+    </section>
+    </div>
+    <p class="help-detail" data-i18n="helpStorageNote">最高分仅保存在当前浏览器；音效默认关闭。</p>
     <p class="credit" data-i18n="credit">非官方同人项目，与 DeepSeek 无隶属、合作或授权关系。角色依据用户提供的参考图生成，代码与游戏图形自行实现。</p>
     <form method="dialog"><button autofocus data-i18n="gotIt">知道了</button></form>
   </dialog>
