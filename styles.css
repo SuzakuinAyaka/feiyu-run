@@ -34,7 +34,7 @@ body.arriving #entrance {
 }
 body.arriving #scoreboard, body.arriving #utilities, body.arriving #preferences { visibility: hidden; pointer-events: none; }
 body.arriving #touch-controls { z-index: 2; }
-body.hud-arrive #scoreboard, body.hud-arrive #utilities, body.hud-arrive #preferences { animation: hud-rise 500ms ease-out both; }
+body.hud-arrive #scoreboard, body.hud-arrive #utilities, body.hud-arrive #preferences { animation: hud-rise 500ms ease-out backwards; }
 @keyframes hud-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 #departure-message { position: fixed; top: 13svh; left: 50%; transform: translateX(-50%); margin: 0; max-width: calc(100% - 48px); width: max-content; text-align: center; color: var(--ink); font-size: 24px; line-height: 1.5; pointer-events: none; animation: departure-note 3400ms linear both; }
 @keyframes departure-note { 0% { opacity: 0; } 5%, 93% { opacity: 1; } 100% { opacity: 0; } }
@@ -64,7 +64,7 @@ button:active { opacity: 0.7; }
 }
 body[data-state="paused"] #score.new-record { animation-play-state: paused; }
 body[data-state="over"] #score.new-record { animation: none; }
-#overlay { position: absolute; z-index: 3; top: 34%; left: 50%; transform: translateX(-50%); width: min(90%, 360px); text-align: center; }
+#overlay { position: absolute; z-index: 3; top: 34%; left: 0; right: 0; margin-inline: auto; width: min(90%, 360px); text-align: center; }
 #overlay h2 { margin: 0 0 12px; font-size: 24px; letter-spacing: 0.1em; }
 #overlay p { margin: 0 0 20px; font-size: 16px; line-height: 1.5; }
 #continue { padding: 12px 26px; color: var(--paper); background: var(--accent); min-height: 44px; }
@@ -78,6 +78,7 @@ body:not([data-state="ready"]) #utilities, body:not([data-state="ready"]) #prefe
   padding: 4px 10px;
   border: 1px solid rgb(255 255 255 / 55%);
   border-radius: var(--radius-control);
+  clip-path: inset(0 round var(--radius-control));
   background: rgb(255 255 255 / 90%);
   color: var(--ink);
 }
@@ -98,6 +99,7 @@ body:not([data-state="ready"]) #utilities button:hover, body:not([data-state="re
 #touch-controls span { display: block; font-size: 14px; margin-top: 3px; }
 /* 用足量浅色底托住文字；不支持背景模糊时回退为近不透明底色。 */
 dialog, #overlay, #touch-controls button, #retry-load {
+  clip-path: inset(0 round var(--radius-panel));
   background: #f5fafd;
   color: var(--ink);
   border: 1px solid var(--glass-edge);
@@ -131,7 +133,7 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
   #start-hint { font-size: 20px; }
   #entrance { padding-top: 18svh; }
   #scoreboard { top: 22%; gap: 18px; right: 20px; }
-  #utilities { right: 20px; left: 20px; }
+  #utilities { right: 20px; left: 20px; justify-content: center; }
   #preferences { right: 20px; }
   #overlay { top: 32%; }
   #departure-message { font-size: 18px; }
