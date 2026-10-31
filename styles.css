@@ -145,6 +145,13 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
   #scoreboard { top: 22%; gap: 18px; right: 20px; }
   #utilities { right: 20px; left: 20px; justify-content: center; }
   #preferences { right: 20px; }
+  /* 小型语言底板使用半透明白底，避免移动端滤镜合成产生直角色块。 */
+  body:not([data-state="ready"]) #preferences {
+    background: #f5fafd;
+    background: rgb(255 255 255 / 70%);
+    box-shadow: 0 3px 12px rgb(26 65 92 / 8%);
+  }
+  body:not([data-state="ready"]) #preferences::before { content: none; }
   #overlay { top: 32%; }
   #departure-message { font-size: 18px; }
 }
@@ -155,6 +162,7 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
   #departure-message { animation: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
+  body:not([data-state="ready"]) #preferences { background: #f5fafd; }
   dialog::before, #overlay::before, #touch-controls button::before, #retry-load::before,
   body:not([data-state="ready"]) #utilities::before, body:not([data-state="ready"]) #preferences::before {
     background: #f5fafd; -webkit-backdrop-filter: none; backdrop-filter: none;
