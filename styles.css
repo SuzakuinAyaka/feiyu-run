@@ -138,6 +138,14 @@ dialog h2 { font-size: 24px; margin: 0 0 20px; }
   overflow: hidden;
 }
 #help-dialog[open] { display: flex; flex-direction: column; }
+#help-dialog[data-motion="opening"] { animation: help-in 240ms ease-out; }
+#help-dialog[data-motion="closing"] { animation: help-out 180ms ease-in both; }
+#help-dialog[data-motion="opening"]::backdrop { animation: help-backdrop-in 240ms ease-out; }
+#help-dialog[data-motion="closing"]::backdrop { animation: help-backdrop-out 180ms ease-in both; }
+@keyframes help-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes help-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(6px); } }
+@keyframes help-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes help-backdrop-out { from { opacity: 1; } to { opacity: 0; } }
 #help-dialog > h2 { flex: 0 0 auto; margin-bottom: 12px; }
 #help-dialog > form { flex: 0 0 auto; margin: 0; padding-top: 16px; }
 .help-reading { position: relative; flex: 1 1 auto; min-height: 0; }
@@ -207,6 +215,7 @@ dialog form button:hover { background: var(--ink); color: var(--paper); }
   #departure-message { font-size: 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  #help-dialog[data-motion], #help-dialog[data-motion]::backdrop { animation: none; }
   body[data-state="over"] #scene { animation: none; }
   body.hud-arrive #scoreboard, body.hud-arrive #utilities, body.hud-arrive #preferences { animation: none; }
   #score.new-record { animation: none; }

@@ -209,11 +209,34 @@ if (typeof ResizeObserver !== 'undefined') {
   helpObserver.observe($('help-scroll'));
   helpObserver.observe(document.querySelector('.help-columns'));
 }
+let helpCloseTimer;
+function finishHelpClose() {
+  if ($('help-dialog').open && $('help-dialog').dataset.motion === 'closing') $('help-dialog').close();
+}
+function closeHelp() {
+  const dialog = $('help-dialog');
+  if (!dialog.open || dialog.dataset.motion === 'closing') return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { dialog.close(); return; }
+  dialog.dataset.motion = 'closing';
+  // 动画事件不可用或被样式覆盖时，也能可靠关闭。
+  helpCloseTimer = setTimeout(finishHelpClose, 220);
+}
 $('help').addEventListener('click', () => {
-  pause(); $('help-dialog').showModal(); $('help-scroll').scrollTop = 0;
+  if ($('help-dialog').open) return;
+  pause(); clearTimeout(helpCloseTimer);
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) $('help-dialog').dataset.motion = 'opening';
+  $('help-dialog').showModal(); $('help-scroll').scrollTop = 0;
   requestAnimationFrame(updateHelpScroll);
 });
+$('help-dialog').querySelector('form').addEventListener('submit', (event) => { event.preventDefault(); closeHelp(); });
+$('help-dialog').addEventListener('cancel', (event) => { event.preventDefault(); closeHelp(); });
+$('help-dialog').addEventListener('animationend', (event) => {
+  if (event.target !== $('help-dialog')) return;
+  if (event.animationName === 'help-out') finishHelpClose();
+  else if (event.animationName === 'help-in' && $('help-dialog').dataset.motion === 'opening') delete $('help-dialog').dataset.motion;
+});
 $('help-dialog').addEventListener('close', () => {
+  clearTimeout(helpCloseTimer); delete $('help-dialog').dataset.motion;
   clearInput();
   if (game.state === 'paused') $('continue').focus({ preventScroll: true });
 });
